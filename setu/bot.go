@@ -43,7 +43,7 @@ type Config struct {
 type SetuBot struct {
 	viper    *viper.Viper
 	config   *Config
-	commands map[string][]Setu
+	commands map[string][]string
 }
 
 func init() {
@@ -106,19 +106,14 @@ func (b *SetuBot) Init() {
 		instance.config.Reply.Error = "获取或上传图片失败"
 	}
 
-	api := map[string]Setu{
-		lolicon.ID: instance.config.Lolicon,
-	}
-	instance.commands = make(map[string][]Setu)
+	instance.commands = make(map[string][]string)
 	for k, v := range instance.config.Commands {
-		if a, ok := api[k]; ok {
-			for _, s := range v {
-				if c, ok := instance.commands[s]; ok {
-					c = append(c, a)
-					instance.commands[s] = c
-				} else {
-					instance.commands[s] = []Setu{a}
-				}
+		for _, s := range v {
+			if c, ok := instance.commands[s]; ok {
+				c = append(c, k)
+				instance.commands[s] = c
+			} else {
+				instance.commands[s] = []string{k}
 			}
 		}
 	}
@@ -266,7 +261,7 @@ func getImage(texts []string) ([][]byte, error) {
 
 	var hasCommand bool
 	keywords := make([]string, 0, len(texts))
-	cmd := make(map[Setu]struct{})
+	cmd := make(map[string]struct{})
 	for _, t := range texts {
 		var isCommand bool
 		for k, v := range instance.commands {
@@ -287,14 +282,15 @@ func getImage(texts []string) ([][]byte, error) {
 	}
 
 	var images [][]byte
-	for k := range cmd {
-		switch c := k.(type) {
-		case *lolicon.Query:
-			if c.Keyword != "" {
-				keywords = append(keywords, c.Keyword)
-				c.Keyword = strings.Join(keywords, " ")
+	for s := range cmd {
+		switch s {
+		case lolicon.ID:
+			query := *instance.config.Lolicon
+			if query.Keyword != "" {
+				keywords = append(keywords, query.Keyword)
 			}
-			img, err := c.GetImage()
+			query.Keyword = strings.Join(keywords, " ")
+			img, err := query.GetImage()
 			if err != nil {
 				logger.WithError(err).Error("获取图片失败")
 				break
