@@ -26,6 +26,7 @@ var (
 	instance       = &SetuBot{viper: viper.New()}
 	logger         = utils.GetModuleLogger(SetuID)
 	errorNoCommand = errors.New("没有发现有效的命令")
+	errorTag       = errors.New("东方图片搜索关键字包含非英文字母")
 )
 
 type Reply struct {
@@ -34,6 +35,7 @@ type Reply struct {
 	SendFailed      string `json:"sendFailed"`
 	KeywordNotFound string `json:"keywordNotFound"`
 	QuotaLimit      string `json:"quotaLimit"`
+	TagError        string `json:"tagError"`
 	Error           string `json:"error"`
 }
 
@@ -95,9 +97,9 @@ func (b *SetuBot) Init() {
 	if len(instance.config.Commands) == 0 {
 		instance.config.Commands = map[string][]string{
 			lolicon.ID:              {"色图", "涩图", "瑟图", "setu"},
-			islandwind233.AnimeID:   {"二次元", "二刺猿"},
+			islandwind233.AnimeID:   {"二次元", "二刺猿", "erciyuan"},
 			islandwind233.CosplayID: {"cos", "余弦", "三次元"},
-			paulzzh.ID:              {"东方", "车万", "東方", "越共", "touhou"},
+			paulzzh.ID:              {"东方", "车万", "東方", "越共", "dongfang", "touhou"},
 		}
 	}
 	if instance.config.Reply.Normal == "" {
@@ -114,6 +116,9 @@ func (b *SetuBot) Init() {
 	}
 	if instance.config.Reply.QuotaLimit == "" {
 		instance.config.Reply.QuotaLimit = "已经达到接口的调用额度上限"
+	}
+	if instance.config.Reply.TagError == "" {
+		instance.config.Reply.TagError = "东方图片搜索关键字必须是英文字母"
 	}
 	if instance.config.Reply.Error == "" {
 		instance.config.Reply.Error = "获取或上传图片失败"
@@ -166,6 +171,8 @@ func onPrivateMessage(qqClient *client.QQClient, msg *message.PrivateMessage) {
 			sendPrivateText(qqClient, msg.Sender.Uin, instance.config.Reply.KeywordNotFound)
 		} else if errors.Is(err, lolicon.ErrorQuotaLimit) {
 			sendPrivateText(qqClient, msg.Sender.Uin, instance.config.Reply.QuotaLimit)
+		} else if errors.Is(err, errorTag) {
+			sendPrivateText(qqClient, msg.Sender.Uin, instance.config.Reply.TagError)
 		} else {
 			sendPrivateText(qqClient, msg.Sender.Uin, instance.config.Reply.Error)
 		}
@@ -237,6 +244,8 @@ func onGroupMessage(qqClient *client.QQClient, msg *message.GroupMessage) {
 				sendGroupText(qqClient, msg.GroupCode, msg.Sender.Uin, msg.Sender.DisplayName(), instance.config.Reply.KeywordNotFound)
 			} else if errors.Is(err, lolicon.ErrorQuotaLimit) {
 				sendGroupText(qqClient, msg.GroupCode, msg.Sender.Uin, msg.Sender.DisplayName(), instance.config.Reply.QuotaLimit)
+			} else if errors.Is(err, errorTag) {
+				sendGroupText(qqClient, msg.GroupCode, msg.Sender.Uin, msg.Sender.DisplayName(), instance.config.Reply.TagError)
 			} else {
 				sendGroupText(qqClient, msg.GroupCode, msg.Sender.Uin, msg.Sender.DisplayName(), instance.config.Reply.Error)
 			}
@@ -367,6 +376,13 @@ func getImage(texts []string) ([][]byte, error) {
 					keywords = append(keywords, query.Tag)
 				}
 				query.Tag = strings.Join(keywords, " ")
+				if !setu_utils.IsLetter(query.Tag) {
+					logger.WithError(errorTag).Errorf("错误Tag：%s", query.Tag)
+					mu.Lock()
+					e = errorTag
+					mu.Unlock()
+					break
+				}
 				img, err := query.GetImage()
 				if err != nil {
 					logger.WithError(err).Error("获取图片失败")

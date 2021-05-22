@@ -85,6 +85,9 @@ func (q *Query) GetImage() ([][]byte, error) {
 		if err != nil {
 			return nil, err
 		}
+		if !json.Valid(body) {
+			return [][]byte{body}, nil
+		}
 		resp := new(Response)
 		err = json.Unmarshal(body, resp)
 		if err != nil {
