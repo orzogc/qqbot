@@ -26,11 +26,12 @@ var (
 )
 
 type Reply struct {
-	Normal     string `json:"normal"`
-	NoCommand  string `json:"noCommand"`
-	Unknown    string `json:"unknown"`
-	SendFailed string `json:"sendFailed"`
-	Error      string `json:"error"`
+	Normal          string `json:"normal"`
+	NoCommand       string `json:"noCommand"`
+	SendFailed      string `json:"sendFailed"`
+	KeywordNotFound string `json:"keywordNotFound"`
+	QuotaLimit      string `json:"quotaLimit"`
+	Error           string `json:"error"`
 }
 
 type Config struct {
@@ -96,11 +97,14 @@ func (b *SetuBot) Init() {
 	if instance.config.Reply.NoCommand == "" {
 		instance.config.Reply.NoCommand = "未知命令"
 	}
-	if instance.config.Reply.Unknown == "" {
-		instance.config.Reply.Unknown = "发现未知消息类型，目前只支持文本消息"
-	}
 	if instance.config.Reply.SendFailed == "" {
 		instance.config.Reply.SendFailed = "发送图片失败"
+	}
+	if instance.config.Reply.KeywordNotFound == "" {
+		instance.config.Reply.KeywordNotFound = "找不到符合关键字的图片"
+	}
+	if instance.config.Reply.QuotaLimit == "" {
+		instance.config.Reply.QuotaLimit = "已经达到接口的调用额度上限"
 	}
 	if instance.config.Reply.Error == "" {
 		instance.config.Reply.Error = "获取或上传图片失败"
@@ -149,6 +153,10 @@ func onPrivateMessage(qqClient *client.QQClient, msg *message.PrivateMessage) {
 		logger.WithError(err).Error("获取图片失败")
 		if errors.Is(err, errorNoCommand) {
 			sendPrivateText(qqClient, msg.Sender.Uin, instance.config.Reply.NoCommand)
+		} else if errors.Is(err, lolicon.ErrorKeywordNotFound) {
+			sendPrivateText(qqClient, msg.Sender.Uin, instance.config.Reply.KeywordNotFound)
+		} else if errors.Is(err, lolicon.ErrorQuotaLimit) {
+			sendPrivateText(qqClient, msg.Sender.Uin, instance.config.Reply.QuotaLimit)
 		} else {
 			sendPrivateText(qqClient, msg.Sender.Uin, instance.config.Reply.Error)
 		}
@@ -214,6 +222,10 @@ func onGroupMessage(qqClient *client.QQClient, msg *message.GroupMessage) {
 			logger.WithError(err).Error("获取图片失败")
 			if errors.Is(err, errorNoCommand) {
 				sendGroupText(qqClient, msg.GroupCode, msg.Sender.Uin, msg.Sender.DisplayName(), instance.config.Reply.NoCommand)
+			} else if errors.Is(err, lolicon.ErrorKeywordNotFound) {
+				sendGroupText(qqClient, msg.GroupCode, msg.Sender.Uin, msg.Sender.DisplayName(), instance.config.Reply.KeywordNotFound)
+			} else if errors.Is(err, lolicon.ErrorQuotaLimit) {
+				sendGroupText(qqClient, msg.GroupCode, msg.Sender.Uin, msg.Sender.DisplayName(), instance.config.Reply.QuotaLimit)
 			} else {
 				sendGroupText(qqClient, msg.GroupCode, msg.Sender.Uin, msg.Sender.DisplayName(), instance.config.Reply.Error)
 			}
@@ -282,6 +294,7 @@ func getImage(texts []string) ([][]byte, error) {
 	}
 
 	var images [][]byte
+	var e error
 	for s := range cmd {
 		switch s {
 		case lolicon.ID:
@@ -293,18 +306,23 @@ func getImage(texts []string) ([][]byte, error) {
 			img, err := query.GetImage()
 			if err != nil {
 				logger.WithError(err).Error("获取图片失败")
+				e = err
 				break
 			}
 			images = append(images, img...)
 		default:
+			logger.Warnf("未知的图片接口：%s", s)
 		}
 	}
 
 	if len(images) == 0 {
+		if e != nil {
+			return nil, e
+		}
 		return nil, fmt.Errorf("获取图片失败")
 	}
 
-	return images, nil
+	return images, e
 }
 
 func registerBot(b *bot.Bot) {

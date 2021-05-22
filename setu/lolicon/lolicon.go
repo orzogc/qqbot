@@ -54,6 +54,14 @@ const (
 	QuotaLimit      Code = 429
 )
 
+var (
+	ErrorInternal        = fmt.Errorf("lolicon内部错误")
+	ErrorAPIKey          = fmt.Errorf("apikey不存在或被封禁")
+	ErrorRefuse          = fmt.Errorf("由于不规范的操作而被拒绝调用")
+	ErrorKeywordNotFound = fmt.Errorf("找不到符合关键字的图片")
+	ErrorQuotaLimit      = fmt.Errorf("达到调用额度限制")
+)
+
 type Query struct {
 	APIKey   string `json:"apikey"`
 	R18      uint   `json:"r18"`
@@ -77,9 +85,28 @@ func (r *Response) IsSuccess() bool {
 	return r.Code == Success
 }
 
+func (r *Response) Error() error {
+	switch r.Code {
+	case InternalError:
+		return ErrorInternal
+	case Success:
+		return nil
+	case APIKeyError:
+		return ErrorAPIKey
+	case Refuse:
+		return ErrorRefuse
+	case KeywordNotFound:
+		return ErrorKeywordNotFound
+	case QuotaLimit:
+		return ErrorQuotaLimit
+	default:
+		return fmt.Errorf("未知的错误码：%d", r.Code)
+	}
+}
+
 func (r *Response) GetImage() ([][]byte, error) {
 	if !r.IsSuccess() {
-		return nil, fmt.Errorf("请求lolicon失败，返回码code为%d，错误信息msg为%s", r.Code, r.Msg)
+		return nil, fmt.Errorf("请求lolicon出现错误：%w，错误信息msg：%s", r.Error(), r.Msg)
 	}
 	if len(r.Data) == 0 {
 		return nil, fmt.Errorf("请求lolicon失败，data长度为0")
