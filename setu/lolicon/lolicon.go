@@ -23,6 +23,15 @@ const (
 	Size1200   = "size1200"
 )
 
+type Query struct {
+	APIKey   string `json:"apikey"`
+	R18      uint   `json:"r18"`
+	Keyword  string `json:"keyword"`
+	Num      uint   `json:"num"`
+	Proxy    string `json:"proxy"`
+	Size1200 bool   `json:"size1200"`
+}
+
 type Response struct {
 	Code        Code     `json:"code"`
 	Msg         string   `json:"msg"`
@@ -64,13 +73,53 @@ var (
 	ErrorQuotaLimit      = fmt.Errorf("达到调用额度限制")
 )
 
-type Query struct {
-	APIKey   string `json:"apikey"`
-	R18      uint   `json:"r18"`
-	Keyword  string `json:"keyword"`
-	Num      uint   `json:"num"`
-	Proxy    string `json:"proxy"`
-	Size1200 bool   `json:"size1200"`
+func (q *Query) Lolicon() (*Response, error) {
+	query := url.Values{}
+	if q.APIKey != "" {
+		query.Add(APIKey, q.APIKey)
+	}
+	if q.R18 != 0 {
+		if q.R18 > 2 {
+			return nil, fmt.Errorf("R18必须为0、1或2，现为%d", q.R18)
+		}
+		query.Add(R18, strconv.FormatUint(uint64(q.R18), 10))
+	}
+	if q.Keyword != "" {
+		query.Add(Keyword, q.Keyword)
+	}
+	if q.Num != 0 {
+		if q.Num > 10 {
+			return nil, fmt.Errorf("Num必须为0到10，现为%d", q.Num)
+		}
+		query.Add(Num, strconv.FormatUint(uint64(q.Num), 10))
+	}
+	if q.Proxy != "" {
+		query.Add(Proxy, q.Proxy)
+	}
+	if q.Size1200 {
+		query.Add(Size1200, "1")
+	}
+
+	body, err := setu_utils.Get(LoliconURL, query)
+	if err != nil {
+		return nil, err
+	}
+
+	r := new(Response)
+	if err = json.Unmarshal(body, r); err != nil {
+		return nil, err
+	}
+
+	return r, nil
+}
+
+func (q *Query) GetImage() ([][]byte, error) {
+	r, err := q.Lolicon()
+	if err != nil {
+		return nil, err
+	}
+
+	return r.GetImage()
 }
 
 func (r *Response) IsSuccess() bool {
@@ -139,53 +188,4 @@ func (r *Response) GetImage() ([][]byte, error) {
 	}
 
 	return images, nil
-}
-
-func (q *Query) Lolicon() (*Response, error) {
-	query := url.Values{}
-	if q.APIKey != "" {
-		query.Add(APIKey, q.APIKey)
-	}
-	if q.R18 > 2 {
-		return nil, fmt.Errorf("R18必须为0、1或2，现为%d", q.R18)
-	}
-	if q.R18 != 0 {
-		query.Add(R18, strconv.FormatUint(uint64(q.R18), 10))
-	}
-	if q.Keyword != "" {
-		query.Add(Keyword, q.Keyword)
-	}
-	if q.Num > 10 {
-		return nil, fmt.Errorf("Num必须为0到10，现为%d", q.Num)
-	}
-	if q.Num != 0 {
-		query.Add(Num, strconv.FormatUint(uint64(q.Num), 10))
-	}
-	if q.Proxy != "" {
-		query.Add(Proxy, q.Proxy)
-	}
-	if q.Size1200 {
-		query.Add(Size1200, "1")
-	}
-
-	body, err := setu_utils.Get(LoliconURL, query)
-	if err != nil {
-		return nil, err
-	}
-
-	r := new(Response)
-	if err = json.Unmarshal(body, r); err != nil {
-		return nil, err
-	}
-
-	return r, nil
-}
-
-func (q *Query) GetImage() ([][]byte, error) {
-	r, err := q.Lolicon()
-	if err != nil {
-		return nil, err
-	}
-
-	return r.GetImage()
 }

@@ -18,7 +18,9 @@ func TestLolicon(t *testing.T) {
 }
 
 func TestGetImage(t *testing.T) {
-	q := &Query{}
+	q := &Query{
+		Proxy: "disable",
+	}
 	img, err := q.GetImage()
 	if err != nil {
 		t.Fatal(err)

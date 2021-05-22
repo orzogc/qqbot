@@ -15,6 +15,7 @@ import (
 	"github.com/Mrs4s/MiraiGo/message"
 	"github.com/orzogc/qqbot/setu/islandwind233"
 	"github.com/orzogc/qqbot/setu/lolicon"
+	"github.com/orzogc/qqbot/setu/paulzzh"
 	"github.com/orzogc/qqbot/setu/setu_utils"
 	"github.com/spf13/viper"
 )
@@ -38,6 +39,7 @@ type Reply struct {
 
 type Config struct {
 	Lolicon  *lolicon.Query      `json:"lolicon"`
+	Paulzzh  *paulzzh.Query      `json:"paulzzh"`
 	Timeout  uint                `json:"timeout"`
 	Commands map[string][]string `json:"commands"`
 	Reply    Reply               `json:"reply"`
@@ -95,6 +97,7 @@ func (b *SetuBot) Init() {
 			lolicon.ID:              {"色图", "涩图", "瑟图", "setu"},
 			islandwind233.AnimeID:   {"二次元", "二刺猿"},
 			islandwind233.CosplayID: {"cos", "余弦", "三次元"},
+			paulzzh.ID:              {"东方", "车万", "東方", "越共", "touhou"},
 		}
 	}
 	if instance.config.Reply.Normal == "" {
@@ -348,6 +351,23 @@ func getImage(texts []string) ([][]byte, error) {
 			case islandwind233.CosplayID:
 				cosplay := &islandwind233.Cosplay{}
 				img, err := cosplay.GetImage()
+				if err != nil {
+					logger.WithError(err).Error("获取图片失败")
+					mu.Lock()
+					e = err
+					mu.Unlock()
+					break
+				}
+				mu.Lock()
+				images = append(images, img...)
+				mu.Unlock()
+			case paulzzh.ID:
+				query := *instance.config.Paulzzh
+				if query.Tag != "" {
+					keywords = append(keywords, query.Tag)
+				}
+				query.Tag = strings.Join(keywords, " ")
+				img, err := query.GetImage()
 				if err != nil {
 					logger.WithError(err).Error("获取图片失败")
 					mu.Lock()
