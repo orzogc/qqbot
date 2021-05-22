@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strconv"
 	"sync"
 
@@ -141,12 +142,7 @@ func (r *Response) GetImage() ([][]byte, error) {
 }
 
 func (q *Query) Lolicon() (*Response, error) {
-	req, err := http.NewRequest(http.MethodGet, LoliconURL, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	query := req.URL.Query()
+	query := url.Values{}
 	if q.APIKey != "" {
 		query.Add(APIKey, q.APIKey)
 	}
@@ -171,14 +167,8 @@ func (q *Query) Lolicon() (*Response, error) {
 	if q.Size1200 {
 		query.Add(Size1200, "1")
 	}
-	req.URL.RawQuery = query.Encode()
 
-	resp, err := setu_utils.Client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-	body, err := io.ReadAll(resp.Body)
+	body, err := setu_utils.Get(LoliconURL, query)
 	if err != nil {
 		return nil, err
 	}

@@ -92,16 +92,16 @@ func (b *SetuBot) Init() {
 	}
 	if len(instance.config.Commands) == 0 {
 		instance.config.Commands = map[string][]string{
-			lolicon.ID:              {"色图", "涩图", "瑟图"},
+			lolicon.ID:              {"色图", "涩图", "瑟图", "setu"},
 			islandwind233.AnimeID:   {"二次元", "二刺猿"},
-			islandwind233.CosplayID: {"cos", "cosplay", "余弦", "三次元"},
+			islandwind233.CosplayID: {"cos", "余弦", "三次元"},
 		}
 	}
 	if instance.config.Reply.Normal == "" {
 		instance.config.Reply.Normal = "这是您点的图片"
 	}
 	if instance.config.Reply.NoCommand == "" {
-		instance.config.Reply.NoCommand = "未知命令"
+		instance.config.Reply.NoCommand = "未知命令，现在命令要加上#"
 	}
 	if instance.config.Reply.SendFailed == "" {
 		instance.config.Reply.SendFailed = "发送图片失败"
@@ -286,12 +286,14 @@ func getImage(texts []string) ([][]byte, error) {
 	cmd := make(map[string]struct{})
 	for _, t := range texts {
 		var isCommand bool
-		for k, v := range instance.commands {
-			if strings.Contains(t, k) {
-				hasCommand = true
-				isCommand = true
-				for _, c := range v {
-					cmd[c] = struct{}{}
+		if strings.Contains(t, "#") {
+			for k, v := range instance.commands {
+				if strings.Contains(t, k) {
+					hasCommand = true
+					isCommand = true
+					for _, c := range v {
+						cmd[c] = struct{}{}
+					}
 				}
 			}
 		}
