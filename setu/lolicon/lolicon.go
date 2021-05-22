@@ -7,7 +7,8 @@ import (
 	"net/http"
 	"strconv"
 	"sync"
-	"time"
+
+	"github.com/orzogc/qqbot/setu/setu_utils"
 )
 
 const (
@@ -71,16 +72,6 @@ type Query struct {
 	Size1200 bool   `json:"size1200"`
 }
 
-var client = &http.Client{
-	Timeout: 20 * time.Second,
-}
-
-func SetTimeout(second uint) {
-	client = &http.Client{
-		Timeout: time.Duration(second) * time.Second,
-	}
-}
-
 func (r *Response) IsSuccess() bool {
 	return r.Code == Success
 }
@@ -126,7 +117,7 @@ func (r *Response) GetImage() ([][]byte, error) {
 			if req.URL.Host == "i.pximg.net" {
 				req.Header.Set("Referer", "https://www.pixiv.net/")
 			}
-			resp, err := client.Do(req)
+			resp, err := setu_utils.Client.Do(req)
 			if err != nil {
 				return
 			}
@@ -182,7 +173,7 @@ func (q *Query) Lolicon() (*Response, error) {
 	}
 	req.URL.RawQuery = query.Encode()
 
-	resp, err := client.Do(req)
+	resp, err := setu_utils.Client.Do(req)
 	if err != nil {
 		return nil, err
 	}

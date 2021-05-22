@@ -13,7 +13,9 @@ import (
 	"github.com/Logiase/MiraiGo-Template/utils"
 	"github.com/Mrs4s/MiraiGo/client"
 	"github.com/Mrs4s/MiraiGo/message"
+	"github.com/orzogc/qqbot/setu/islandwind233"
 	"github.com/orzogc/qqbot/setu/lolicon"
+	"github.com/orzogc/qqbot/setu/setu_utils"
 	"github.com/spf13/viper"
 )
 
@@ -86,10 +88,14 @@ func (b *SetuBot) Init() {
 	}
 
 	if instance.config.Timeout != 0 {
-		lolicon.SetTimeout(instance.config.Timeout)
+		setu_utils.SetTimeout(instance.config.Timeout)
 	}
 	if len(instance.config.Commands) == 0 {
-		instance.config.Commands = map[string][]string{lolicon.ID: {"色图", "涩图", "瑟图"}}
+		instance.config.Commands = map[string][]string{
+			lolicon.ID:              {"色图", "涩图", "瑟图"},
+			islandwind233.AnimeID:   {"二次元", "二刺猿"},
+			islandwind233.CosplayID: {"cos", "cosplay", "余弦", "三次元"},
+		}
 	}
 	if instance.config.Reply.Normal == "" {
 		instance.config.Reply.Normal = "这是您点的图片"
@@ -160,7 +166,9 @@ func onPrivateMessage(qqClient *client.QQClient, msg *message.PrivateMessage) {
 		} else {
 			sendPrivateText(qqClient, msg.Sender.Uin, instance.config.Reply.Error)
 		}
-		return
+		if len(images) == 0 {
+			return
+		}
 	}
 	sendPrivateImage(qqClient, msg.Sender.Uin, images)
 }
@@ -229,7 +237,9 @@ func onGroupMessage(qqClient *client.QQClient, msg *message.GroupMessage) {
 			} else {
 				sendGroupText(qqClient, msg.GroupCode, msg.Sender.Uin, msg.Sender.DisplayName(), instance.config.Reply.Error)
 			}
-			return
+			if len(images) == 0 {
+				return
+			}
 		}
 		sendGroupImage(qqClient, msg.GroupCode, msg.Sender.Uin, msg.Sender.DisplayName(), images)
 	}
@@ -295,25 +305,63 @@ func getImage(texts []string) ([][]byte, error) {
 
 	var images [][]byte
 	var e error
+	var mu sync.Mutex
+	var wg sync.WaitGroup
 	for s := range cmd {
-		switch s {
-		case lolicon.ID:
-			query := *instance.config.Lolicon
-			if query.Keyword != "" {
-				keywords = append(keywords, query.Keyword)
+		wg.Add(1)
+		go func(s string) {
+			defer wg.Done()
+
+			switch s {
+			case lolicon.ID:
+				query := *instance.config.Lolicon
+				if query.Keyword != "" {
+					keywords = append(keywords, query.Keyword)
+				}
+				query.Keyword = strings.Join(keywords, " ")
+				img, err := query.GetImage()
+				if err != nil {
+					logger.WithError(err).Error("获取图片失败")
+					mu.Lock()
+					e = err
+					mu.Unlock()
+					break
+				}
+				mu.Lock()
+				images = append(images, img...)
+				mu.Unlock()
+			case islandwind233.AnimeID:
+				anime := &islandwind233.Anime{}
+				img, err := anime.GetImage()
+				if err != nil {
+					logger.WithError(err).Error("获取图片失败")
+					mu.Lock()
+					e = err
+					mu.Unlock()
+					break
+				}
+				mu.Lock()
+				images = append(images, img...)
+				mu.Unlock()
+			case islandwind233.CosplayID:
+				cosplay := &islandwind233.Cosplay{}
+				img, err := cosplay.GetImage()
+				if err != nil {
+					logger.WithError(err).Error("获取图片失败")
+					mu.Lock()
+					e = err
+					mu.Unlock()
+					break
+				}
+				mu.Lock()
+				images = append(images, img...)
+				mu.Unlock()
+			default:
+				logger.Warnf("未知的图片接口：%s", s)
 			}
-			query.Keyword = strings.Join(keywords, " ")
-			img, err := query.GetImage()
-			if err != nil {
-				logger.WithError(err).Error("获取图片失败")
-				e = err
-				break
-			}
-			images = append(images, img...)
-		default:
-			logger.Warnf("未知的图片接口：%s", s)
-		}
+		}(s)
 	}
+	wg.Wait()
 
 	if len(images) == 0 {
 		if e != nil {

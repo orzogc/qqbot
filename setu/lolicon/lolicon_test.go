@@ -12,7 +12,7 @@ func TestLolicon(t *testing.T) {
 	}
 	t.Logf("%+v", resp)
 	if len(resp.Data) != 1 {
-		t.Fatal("Failed to get image from lolicon")
+		t.Fatal("failed to get image from lolicon")
 	}
 	t.Logf("%+v", resp.Data[0])
 }
@@ -24,6 +24,6 @@ func TestGetImage(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(img) != 1 {
-		t.Fatal("Failed to get image from lolicon")
+		t.Fatal("failed to get image from lolicon")
 	}
 }
