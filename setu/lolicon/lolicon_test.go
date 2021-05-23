@@ -14,7 +14,6 @@ func TestLolicon(t *testing.T) {
 	if len(resp.Data) != 1 {
 		t.Fatal("failed to get image from lolicon")
 	}
-	t.Logf("%+v", resp.Data[0])
 }
 
 func TestGetImage(t *testing.T) {

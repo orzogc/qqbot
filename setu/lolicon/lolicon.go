@@ -33,12 +33,12 @@ type Query struct {
 }
 
 type Response struct {
-	Code        Code     `json:"code"`
-	Msg         string   `json:"msg"`
-	Quota       int      `json:"quota"`
-	QuotaMinTTL int      `json:"quota_min_ttl"`
-	Count       int      `json:"count"`
-	Data        []*Image `json:"data"`
+	Code        Code    `json:"code"`
+	Msg         string  `json:"msg"`
+	Quota       int     `json:"quota"`
+	QuotaMinTTL int     `json:"quota_min_ttl"`
+	Count       int     `json:"count"`
+	Data        []Image `json:"data"`
 }
 
 type Image struct {
@@ -158,14 +158,14 @@ func (r *Response) GetImage() ([][]byte, error) {
 	var wg sync.WaitGroup
 	for _, img := range r.Data {
 		wg.Add(1)
-		go func(img *Image) {
+		go func(img Image) {
 			defer wg.Done()
 			req, err := http.NewRequest(http.MethodGet, img.URL, nil)
 			if err != nil {
 				return
 			}
 			if req.URL.Host == "i.pximg.net" {
-				req.Header.Set("Referer", "https://www.pixiv.net/")
+				req.Header.Set("Referer", setu_utils.PixivURL)
 			}
 			resp, err := setu_utils.Client.Do(req)
 			if err != nil {
@@ -184,7 +184,7 @@ func (r *Response) GetImage() ([][]byte, error) {
 	wg.Wait()
 
 	if len(images) == 0 {
-		return nil, fmt.Errorf("获取图片失败")
+		return nil, fmt.Errorf("获取lolicon图片失败")
 	}
 
 	return images, nil

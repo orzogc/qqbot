@@ -7,6 +7,8 @@ import (
 	"time"
 )
 
+const PixivURL = "https://www.pixiv.net/"
+
 var Client = &http.Client{
 	Timeout: 20 * time.Second,
 }
