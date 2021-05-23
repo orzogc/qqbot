@@ -1,4 +1,4 @@
-package setu_utils
+package qqbot_utils
 
 import (
 	"io"
@@ -6,8 +6,6 @@ import (
 	"net/url"
 	"time"
 )
-
-const PixivURL = "https://www.pixiv.net/"
 
 var Client = &http.Client{
 	Timeout: 20 * time.Second,

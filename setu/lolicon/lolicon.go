@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"sync"
 
+	"github.com/orzogc/qqbot/qqbot_utils"
 	"github.com/orzogc/qqbot/setu/setu_utils"
 )
 
@@ -100,7 +101,7 @@ func (q *Query) Lolicon() (*Response, error) {
 		query.Add(Size1200, "1")
 	}
 
-	body, err := setu_utils.Get(LoliconURL, query)
+	body, err := qqbot_utils.Get(LoliconURL, query)
 	if err != nil {
 		return nil, err
 	}
@@ -167,7 +168,7 @@ func (r *Response) GetImage() ([][]byte, error) {
 			if req.URL.Host == "i.pximg.net" {
 				req.Header.Set("Referer", setu_utils.PixivURL)
 			}
-			resp, err := setu_utils.Client.Do(req)
+			resp, err := qqbot_utils.Client.Do(req)
 			if err != nil {
 				return
 			}

@@ -1,7 +1,7 @@
 package islandwind233
 
 import (
-	"github.com/orzogc/qqbot/setu/setu_utils"
+	"github.com/orzogc/qqbot/qqbot_utils"
 )
 
 const (
@@ -12,7 +12,7 @@ const (
 type Anime struct{}
 
 func (a *Anime) GetImage() ([][]byte, error) {
-	body, err := setu_utils.Get(AnimeURL, nil)
+	body, err := qqbot_utils.Get(AnimeURL, nil)
 	if err != nil {
 		return nil, err
 	}

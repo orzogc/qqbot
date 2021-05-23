@@ -12,6 +12,8 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 
+	_ "github.com/orzogc/qqbot/achan"
+	"github.com/orzogc/qqbot/qqbot_utils"
 	_ "github.com/orzogc/qqbot/reconnect"
 	_ "github.com/orzogc/qqbot/setu"
 )
@@ -36,6 +38,11 @@ func setConfig() {
 	err = config.GlobalConfig.ReadInConfig()
 	if err != nil {
 		logger.WithError(err).Panic("读取设置文件qqbot.json失败")
+	}
+
+	timeout := config.GlobalConfig.GetUint("timeout")
+	if timeout != 0 {
+		qqbot_utils.SetTimeout(timeout)
 	}
 }
 

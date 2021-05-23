@@ -11,6 +11,7 @@ import (
 
 	"github.com/NateScarlet/pixiv/pkg/artwork"
 	"github.com/NateScarlet/pixiv/pkg/client"
+	"github.com/orzogc/qqbot/qqbot_utils"
 	"github.com/orzogc/qqbot/setu/setu_utils"
 )
 
@@ -96,7 +97,7 @@ func (p *Pixiv) GetImage() ([][]byte, error) {
 				return
 			}
 			req.Header.Set("Referer", setu_utils.PixivURL)
-			resp, err := setu_utils.Client.Do(req)
+			resp, err := qqbot_utils.Client.Do(req)
 			if err != nil {
 				return
 			}

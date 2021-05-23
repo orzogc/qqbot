@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/orzogc/qqbot/setu/setu_utils"
+	"github.com/orzogc/qqbot/qqbot_utils"
 )
 
 const (
@@ -42,7 +42,7 @@ type Response struct {
 }
 
 func (r *Response) GetImage() ([][]byte, error) {
-	body, err := setu_utils.Get(r.URL, nil)
+	body, err := qqbot_utils.Get(r.URL, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +81,7 @@ func (q *Query) GetImage() ([][]byte, error) {
 	}
 
 	if q.Type == "json" {
-		body, err := setu_utils.Get(PaulzzhURL, query)
+		body, err := qqbot_utils.Get(PaulzzhURL, query)
 		if err != nil {
 			return nil, err
 		}
@@ -96,7 +96,7 @@ func (q *Query) GetImage() ([][]byte, error) {
 		return resp.GetImage()
 	}
 
-	body, err := setu_utils.Get(PaulzzhURL, query)
+	body, err := qqbot_utils.Get(PaulzzhURL, query)
 	if err != nil {
 		return nil, err
 	}

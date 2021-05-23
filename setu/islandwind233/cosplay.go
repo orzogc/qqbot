@@ -1,8 +1,6 @@
 package islandwind233
 
-import (
-	"github.com/orzogc/qqbot/setu/setu_utils"
-)
+import "github.com/orzogc/qqbot/qqbot_utils"
 
 const (
 	CosplayURL = "https://islandwind233.pro/ZY/API/Cos/GetCos.php"
@@ -12,7 +10,7 @@ const (
 type Cosplay struct{}
 
 func (c *Cosplay) GetImage() ([][]byte, error) {
-	body, err := setu_utils.Get(CosplayURL, nil)
+	body, err := qqbot_utils.Get(CosplayURL, nil)
 	if err != nil {
 		return nil, err
 	}
