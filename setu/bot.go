@@ -230,7 +230,6 @@ func sendPrivateImage(qqClient *client.QQClient, qq int64, images [][]byte) {
 			element, err := qqClient.UploadPrivateImage(qq, r)
 			if err != nil {
 				logger.WithError(err).Error("上传私聊图片失败")
-				sendPrivateText(qqClient, qq, instance.config.Reply.UploadImageFailed)
 				continue
 			}
 			reply.Append(element)
@@ -243,6 +242,8 @@ func sendPrivateImage(qqClient *client.QQClient, qq int64, images [][]byte) {
 			logger.Errorf("给QQ %d 发送图片失败", qq)
 			sendPrivateText(qqClient, qq, instance.config.Reply.SendImageFailed)
 		}
+	} else {
+		sendPrivateText(qqClient, qq, instance.config.Reply.UploadImageFailed)
 	}
 }
 
@@ -314,7 +315,6 @@ func sendGroupImage(qqClient *client.QQClient, qqGroup int64, qq int64, qqName s
 			element, err := qqClient.UploadGroupImage(qqGroup, r)
 			if err != nil {
 				logger.WithError(err).Error("上传群聊图片失败")
-				sendGroupText(qqClient, qqGroup, qq, qqName, instance.config.Reply.UploadImageFailed)
 				continue
 			}
 			reply.Append(element)
@@ -327,6 +327,8 @@ func sendGroupImage(qqClient *client.QQClient, qqGroup int64, qq int64, qqName s
 			logger.Errorf("给QQ群 %d 发送图片失败", qqGroup)
 			sendGroupText(qqClient, qqGroup, qq, qqName, instance.config.Reply.SendImageFailed)
 		}
+	} else {
+		sendGroupText(qqClient, qqGroup, qq, qqName, instance.config.Reply.UploadImageFailed)
 	}
 }
 
