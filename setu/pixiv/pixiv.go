@@ -76,6 +76,9 @@ func (p *Pixiv) GetImage() ([][]byte, error) {
 	}
 	artworks := result.Artworks()
 	rand.Seed(time.Now().UnixNano())
+	if len(artworks) == 0 {
+		return nil, fmt.Errorf("没找到关键字 %s 对应的图片", p.Tags)
+	}
 	art := artworks[rand.Intn(len(artworks))]
 	art.FetchPages(p.ctx)
 
