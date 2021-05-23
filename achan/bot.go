@@ -164,7 +164,7 @@ func onGroupMessage(qqClient *client.QQClient, msg *message.GroupMessage) {
 		reply := strings.Join(replies, " ")
 		reply = replace(reply)
 
-		qqbot_utils.SendGroupText(qqClient, msg.GroupCode, msg.Sender.Uin, msg.Sender.DisplayName(), reply)
+		qqbot_utils.SendGroupText(qqClient, msg, reply)
 	}
 }
 

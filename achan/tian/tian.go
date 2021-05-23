@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	TianURL  = "http://api.tianapi.com/txapi/robot/index"
+	TianURL  = "https://api.tianapi.com/txapi/robot/index"
 	Key      = "key"
 	Question = "question"
 	UniqueID = "uniqueid"

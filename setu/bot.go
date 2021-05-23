@@ -263,36 +263,37 @@ func onGroupMessage(qqClient *client.QQClient, msg *message.GroupMessage) {
 		if err != nil {
 			logger.WithError(err).Error("获取图片失败")
 			if errors.Is(err, errorNoCommand) {
-				qqbot_utils.SendGroupText(qqClient, msg.GroupCode, msg.Sender.Uin, msg.Sender.DisplayName(), instance.config.Reply.NoCommand)
+				qqbot_utils.SendGroupText(qqClient, msg, instance.config.Reply.NoCommand)
 			} else if errors.Is(err, lolicon.ErrorKeywordNotFound) || errors.Is(err, pixiv.ErrorSearchFailed) {
-				qqbot_utils.SendGroupText(qqClient, msg.GroupCode, msg.Sender.Uin, msg.Sender.DisplayName(), instance.config.Reply.KeywordNotFound)
+				qqbot_utils.SendGroupText(qqClient, msg, instance.config.Reply.KeywordNotFound)
 			} else if errors.Is(err, lolicon.ErrorQuotaLimit) {
-				qqbot_utils.SendGroupText(qqClient, msg.GroupCode, msg.Sender.Uin, msg.Sender.DisplayName(), instance.config.Reply.QuotaLimit)
+				qqbot_utils.SendGroupText(qqClient, msg, instance.config.Reply.QuotaLimit)
 			} else if errors.Is(err, errorTag) {
-				qqbot_utils.SendGroupText(qqClient, msg.GroupCode, msg.Sender.Uin, msg.Sender.DisplayName(), instance.config.Reply.TagError)
+				qqbot_utils.SendGroupText(qqClient, msg, instance.config.Reply.TagError)
 			} else if errors.Is(err, errorNoTag) {
-				qqbot_utils.SendGroupText(qqClient, msg.GroupCode, msg.Sender.Uin, msg.Sender.DisplayName(), instance.config.Reply.NoTagError)
+				qqbot_utils.SendGroupText(qqClient, msg, instance.config.Reply.NoTagError)
 			} else {
-				qqbot_utils.SendGroupText(qqClient, msg.GroupCode, msg.Sender.Uin, msg.Sender.DisplayName(), instance.config.Reply.GetImageFailed)
+				qqbot_utils.SendGroupText(qqClient, msg, instance.config.Reply.GetImageFailed)
 			}
 			if len(images) == 0 {
 				return
 			}
 		}
-		sendGroupImage(qqClient, msg.GroupCode, msg.Sender.Uin, msg.Sender.DisplayName(), images)
+		sendGroupImage(qqClient, msg, images)
 	}
 }
 
-func sendGroupImage(qqClient *client.QQClient, qqGroup int64, qq int64, qqName string, images [][]byte) {
+func sendGroupImage(qqClient *client.QQClient, msg *message.GroupMessage, images [][]byte) {
 	logger := logger.WithField("from", "sendGroupImage")
 	reply := message.NewSendingMessage()
-	reply.Append(message.NewAt(qq, "@"+qqName))
+	reply.Append(message.NewReply(msg))
+	reply.Append(message.NewAt(msg.Sender.Uin, "@"+msg.Sender.DisplayName()))
 	reply.Append(message.NewText(instance.config.Reply.Normal))
 	num := 0
 	for _, img := range images {
 		if len(img) != 0 {
 			r := bytes.NewReader(img)
-			element, err := qqClient.UploadGroupImage(qqGroup, r)
+			element, err := qqClient.UploadGroupImage(msg.GroupCode, r)
 			if err != nil {
 				logger.WithError(err).Error("上传群聊图片失败")
 				continue
@@ -302,13 +303,13 @@ func sendGroupImage(qqClient *client.QQClient, qqGroup int64, qq int64, qqName s
 		}
 	}
 	if num != 0 {
-		logger.Infof("给QQ群 %d 里的QQ %d 发送 %d 张图片", qqGroup, qq, num)
-		if result := qqClient.SendGroupMessage(qqGroup, reply); result == nil || result.Id <= 0 {
-			logger.Errorf("给QQ群 %d 发送图片失败", qqGroup)
-			qqbot_utils.SendGroupText(qqClient, qqGroup, qq, qqName, instance.config.Reply.SendImageFailed)
+		logger.Infof("给QQ群 %d 里的QQ %d 发送 %d 张图片", msg.GroupCode, msg.Sender.Uin, num)
+		if result := qqClient.SendGroupMessage(msg.GroupCode, reply); result == nil || result.Id <= 0 {
+			logger.Errorf("给QQ群 %d 发送图片失败", msg.GroupCode)
+			qqbot_utils.SendGroupText(qqClient, msg, instance.config.Reply.SendImageFailed)
 		}
 	} else {
-		qqbot_utils.SendGroupText(qqClient, qqGroup, qq, qqName, instance.config.Reply.UploadImageFailed)
+		qqbot_utils.SendGroupText(qqClient, msg, instance.config.Reply.UploadImageFailed)
 	}
 }
 

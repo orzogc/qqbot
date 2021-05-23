@@ -18,13 +18,14 @@ func SendPrivateText(qqClient *client.QQClient, qq int64, text string) {
 	}
 }
 
-func SendGroupText(qqClient *client.QQClient, qqGroup int64, qq int64, qqName string, text string) {
+func SendGroupText(qqClient *client.QQClient, msg *message.GroupMessage, text string) {
 	logger := logger.WithField("from", "SendGroupText")
 	reply := message.NewSendingMessage()
-	reply.Append(message.NewAt(qq, "@"+qqName))
+	reply.Append(message.NewReply(msg))
+	reply.Append(message.NewAt(msg.Sender.Uin, "@"+msg.Sender.DisplayName()))
 	reply.Append(message.NewText(text))
-	logger.Infof("给QQ群 %d 里的QQ %d 发送消息 %s", qqGroup, qq, text)
-	if result := qqClient.SendGroupMessage(qqGroup, reply); result == nil || result.Id <= 0 {
-		logger.Errorf("给QQ群 %d 发送消息失败", qqGroup)
+	logger.Infof("给QQ群 %d 里的QQ %d 发送消息 %s", msg.GroupCode, msg.Sender.Uin, text)
+	if result := qqClient.SendGroupMessage(msg.GroupCode, reply); result == nil || result.Id <= 0 {
+		logger.Errorf("给QQ群 %d 发送消息失败", msg.GroupCode)
 	}
 }
