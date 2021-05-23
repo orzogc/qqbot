@@ -16,6 +16,8 @@ import (
 
 const ID = "pixiv"
 
+var ErrorSearchFailed = fmt.Errorf("没找到关键字对应的pixiv图片")
+
 type SearchOption struct {
 	Page              uint                  `json:"page"`
 	Order             artwork.Order         `json:"order"`
@@ -77,7 +79,7 @@ func (p *Pixiv) GetImage() ([][]byte, error) {
 	artworks := result.Artworks()
 	rand.Seed(time.Now().UnixNano())
 	if len(artworks) == 0 {
-		return nil, fmt.Errorf("没找到关键字 %s 对应的图片", p.Tags)
+		return nil, fmt.Errorf("%w：%s", ErrorSearchFailed, p.Tags)
 	}
 	art := artworks[rand.Intn(len(artworks))]
 	art.FetchPages(p.ctx)

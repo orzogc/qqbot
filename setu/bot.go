@@ -187,7 +187,7 @@ func onPrivateMessage(qqClient *client.QQClient, msg *message.PrivateMessage) {
 		logger.WithError(err).Error("获取图片失败")
 		if errors.Is(err, errorNoCommand) {
 			sendPrivateText(qqClient, msg.Sender.Uin, instance.config.Reply.NoCommand)
-		} else if errors.Is(err, lolicon.ErrorKeywordNotFound) {
+		} else if errors.Is(err, lolicon.ErrorKeywordNotFound) || errors.Is(err, pixiv.ErrorSearchFailed) {
 			sendPrivateText(qqClient, msg.Sender.Uin, instance.config.Reply.KeywordNotFound)
 		} else if errors.Is(err, lolicon.ErrorQuotaLimit) {
 			sendPrivateText(qqClient, msg.Sender.Uin, instance.config.Reply.QuotaLimit)
@@ -262,7 +262,7 @@ func onGroupMessage(qqClient *client.QQClient, msg *message.GroupMessage) {
 			logger.WithError(err).Error("获取图片失败")
 			if errors.Is(err, errorNoCommand) {
 				sendGroupText(qqClient, msg.GroupCode, msg.Sender.Uin, msg.Sender.DisplayName(), instance.config.Reply.NoCommand)
-			} else if errors.Is(err, lolicon.ErrorKeywordNotFound) {
+			} else if errors.Is(err, lolicon.ErrorKeywordNotFound) || errors.Is(err, pixiv.ErrorSearchFailed) {
 				sendGroupText(qqClient, msg.GroupCode, msg.Sender.Uin, msg.Sender.DisplayName(), instance.config.Reply.KeywordNotFound)
 			} else if errors.Is(err, lolicon.ErrorQuotaLimit) {
 				sendGroupText(qqClient, msg.GroupCode, msg.Sender.Uin, msg.Sender.DisplayName(), instance.config.Reply.QuotaLimit)
