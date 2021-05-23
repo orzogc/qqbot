@@ -84,12 +84,12 @@ func (p *Pixiv) GetImage() ([][]byte, error) {
 	art := artworks[rand.Intn(len(artworks))]
 	art.FetchPages(p.ctx)
 
-	images := make([][]byte, 0, len(art.Pages))
+	images := make([][]byte, len(art.Pages))
 	var mu sync.Mutex
 	var wg sync.WaitGroup
-	for _, a := range art.Pages {
+	for i, a := range art.Pages {
 		wg.Add(1)
-		go func(s string) {
+		go func(i int, s string) {
 			defer wg.Done()
 			req, err := http.NewRequest(http.MethodGet, s, nil)
 			if err != nil {
@@ -107,8 +107,8 @@ func (p *Pixiv) GetImage() ([][]byte, error) {
 			}
 			mu.Lock()
 			defer mu.Unlock()
-			images = append(images, body)
-		}(a.Image.Original)
+			images[i] = body
+		}(i, a.Image.Original)
 	}
 	wg.Wait()
 

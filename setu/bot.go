@@ -35,14 +35,15 @@ var (
 )
 
 type Reply struct {
-	Normal          string `json:"normal"`
-	NoCommand       string `json:"noCommand"`
-	SendFailed      string `json:"sendFailed"`
-	KeywordNotFound string `json:"keywordNotFound"`
-	QuotaLimit      string `json:"quotaLimit"`
-	TagError        string `json:"tagError"`
-	NoTagError      string `json:"noTagError"`
-	Error           string `json:"error"`
+	Normal            string `json:"normal"`
+	NoCommand         string `json:"noCommand"`
+	GetImageFailed    string `json:"getImageFailed"`
+	UploadImageFailed string `json:"uploadImageFailed"`
+	SendImageFailed   string `json:"sendImageFailed"`
+	KeywordNotFound   string `json:"keywordNotFound"`
+	QuotaLimit        string `json:"quotaLimit"`
+	TagError          string `json:"tagError"`
+	NoTagError        string `json:"noTagError"`
 }
 
 type PixivConfig struct {
@@ -122,8 +123,14 @@ func (b *SetuBot) Init() {
 	if instance.config.Reply.NoCommand == "" {
 		instance.config.Reply.NoCommand = "未知命令，现在命令要加上#"
 	}
-	if instance.config.Reply.SendFailed == "" {
-		instance.config.Reply.SendFailed = "发送图片失败"
+	if instance.config.Reply.GetImageFailed == "" {
+		instance.config.Reply.GetImageFailed = "获取图片失败"
+	}
+	if instance.config.Reply.UploadImageFailed == "" {
+		instance.config.Reply.UploadImageFailed = "上传图片失败"
+	}
+	if instance.config.Reply.SendImageFailed == "" {
+		instance.config.Reply.SendImageFailed = "发送图片失败"
 	}
 	if instance.config.Reply.KeywordNotFound == "" {
 		instance.config.Reply.KeywordNotFound = "找不到符合关键字的图片"
@@ -136,9 +143,6 @@ func (b *SetuBot) Init() {
 	}
 	if instance.config.Reply.NoTagError == "" {
 		instance.config.Reply.NoTagError = "pixiv图片搜索需要关键字"
-	}
-	if instance.config.Reply.Error == "" {
-		instance.config.Reply.Error = "获取或上传图片失败"
 	}
 
 	instance.pixiv = pixiv.New(instance.config.Pixiv.PHPSESSID)
@@ -196,7 +200,7 @@ func onPrivateMessage(qqClient *client.QQClient, msg *message.PrivateMessage) {
 		} else if errors.Is(err, errorNoTag) {
 			sendPrivateText(qqClient, msg.Sender.Uin, instance.config.Reply.NoTagError)
 		} else {
-			sendPrivateText(qqClient, msg.Sender.Uin, instance.config.Reply.Error)
+			sendPrivateText(qqClient, msg.Sender.Uin, instance.config.Reply.GetImageFailed)
 		}
 		if len(images) == 0 {
 			return
@@ -219,20 +223,26 @@ func sendPrivateImage(qqClient *client.QQClient, qq int64, images [][]byte) {
 	logger := logger.WithField("from", "sendPrivateImage")
 	reply := message.NewSendingMessage()
 	reply.Append(message.NewText(instance.config.Reply.Normal))
+	num := 0
 	for _, img := range images {
-		r := bytes.NewReader(img)
-		element, err := qqClient.UploadPrivateImage(qq, r)
-		if err != nil {
-			logger.WithError(err).Error("上传私聊图片失败")
-			sendPrivateText(qqClient, qq, instance.config.Reply.Error)
-			return
+		if len(img) != 0 {
+			r := bytes.NewReader(img)
+			element, err := qqClient.UploadPrivateImage(qq, r)
+			if err != nil {
+				logger.WithError(err).Error("上传私聊图片失败")
+				sendPrivateText(qqClient, qq, instance.config.Reply.UploadImageFailed)
+				continue
+			}
+			reply.Append(element)
+			num++
 		}
-		reply.Append(element)
 	}
-	logger.Infof("给QQ %d 发送 %d 张图片", qq, len(images))
-	if result := qqClient.SendPrivateMessage(qq, reply); result == nil || result.Id <= 0 {
-		logger.Errorf("给QQ %d 发送图片失败", qq)
-		sendPrivateText(qqClient, qq, instance.config.Reply.SendFailed)
+	if num != 0 {
+		logger.Infof("给QQ %d 发送 %d 张图片", qq, num)
+		if result := qqClient.SendPrivateMessage(qq, reply); result == nil || result.Id <= 0 {
+			logger.Errorf("给QQ %d 发送图片失败", qq)
+			sendPrivateText(qqClient, qq, instance.config.Reply.SendImageFailed)
+		}
 	}
 }
 
@@ -271,7 +281,7 @@ func onGroupMessage(qqClient *client.QQClient, msg *message.GroupMessage) {
 			} else if errors.Is(err, errorNoTag) {
 				sendGroupText(qqClient, msg.GroupCode, msg.Sender.Uin, msg.Sender.DisplayName(), instance.config.Reply.NoTagError)
 			} else {
-				sendGroupText(qqClient, msg.GroupCode, msg.Sender.Uin, msg.Sender.DisplayName(), instance.config.Reply.Error)
+				sendGroupText(qqClient, msg.GroupCode, msg.Sender.Uin, msg.Sender.DisplayName(), instance.config.Reply.GetImageFailed)
 			}
 			if len(images) == 0 {
 				return
@@ -297,20 +307,26 @@ func sendGroupImage(qqClient *client.QQClient, qqGroup int64, qq int64, qqName s
 	reply := message.NewSendingMessage()
 	reply.Append(message.NewAt(qq, "@"+qqName))
 	reply.Append(message.NewText(instance.config.Reply.Normal))
+	num := 0
 	for _, img := range images {
-		r := bytes.NewReader(img)
-		element, err := qqClient.UploadGroupImage(qqGroup, r)
-		if err != nil {
-			logger.WithError(err).Error("上传群聊图片失败")
-			sendGroupText(qqClient, qqGroup, qq, qqName, instance.config.Reply.Error)
-			return
+		if len(img) != 0 {
+			r := bytes.NewReader(img)
+			element, err := qqClient.UploadGroupImage(qqGroup, r)
+			if err != nil {
+				logger.WithError(err).Error("上传群聊图片失败")
+				sendGroupText(qqClient, qqGroup, qq, qqName, instance.config.Reply.UploadImageFailed)
+				continue
+			}
+			reply.Append(element)
+			num++
 		}
-		reply.Append(element)
 	}
-	logger.Infof("给QQ群 %d 里的QQ %d 发送 %d 张图片", qqGroup, qq, len(images))
-	if result := qqClient.SendGroupMessage(qqGroup, reply); result == nil || result.Id <= 0 {
-		logger.Errorf("给QQ群 %d 发送图片失败", qqGroup)
-		sendGroupText(qqClient, qqGroup, qq, qqName, instance.config.Reply.SendFailed)
+	if num != 0 {
+		logger.Infof("给QQ群 %d 里的QQ %d 发送 %d 张图片", qqGroup, qq, num)
+		if result := qqClient.SendGroupMessage(qqGroup, reply); result == nil || result.Id <= 0 {
+			logger.Errorf("给QQ群 %d 发送图片失败", qqGroup)
+			sendGroupText(qqClient, qqGroup, qq, qqName, instance.config.Reply.SendImageFailed)
+		}
 	}
 }
 
