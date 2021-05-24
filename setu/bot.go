@@ -95,13 +95,13 @@ func (b *SetuBot) Init() {
 	if err != nil {
 		logger.WithError(err).Warn("读取设置文件setu.json失败，使用默认设置")
 		instance.config = new(Config)
-		instance.config.Lolicon = lolicon.Query{}
+		instance.commands = make(map[string][]string)
 	} else {
 		err = viper.Unmarshal(&instance.config)
 		if err != nil {
 			logger.WithError(err).Warn("设置文件setu.json的内容无效，使用默认设置")
 			instance.config = new(Config)
-			instance.config.Lolicon = lolicon.Query{}
+			instance.commands = make(map[string][]string)
 		}
 	}
 

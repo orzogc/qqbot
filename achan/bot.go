@@ -11,6 +11,7 @@ import (
 	"github.com/Logiase/MiraiGo-Template/utils"
 	"github.com/Mrs4s/MiraiGo/client"
 	"github.com/Mrs4s/MiraiGo/message"
+	"github.com/orzogc/qqbot/achan/ownthink"
 	"github.com/orzogc/qqbot/achan/tian"
 	"github.com/orzogc/qqbot/qqbot_utils"
 	"github.com/spf13/viper"
@@ -24,8 +25,10 @@ var (
 )
 
 type Config struct {
-	Tian    tian.Query        `json:"tian"`
-	Replace map[string]string `json:"replace"`
+	Tian     tian.Query        `json:"tian"`
+	Ownthink ownthink.Request  `json:"ownthink"`
+	Replace  map[string]string `json:"replace"`
+	Replace2 map[string]string `json:"replace2"`
 }
 
 type AchanBot struct {
@@ -61,13 +64,15 @@ func (b *AchanBot) Init() {
 	if err != nil {
 		logger.WithError(err).Warn("读取设置文件setu.json失败，使用默认设置")
 		instance.config = new(Config)
-		instance.config.Tian = tian.Query{}
+		instance.config.Replace = make(map[string]string)
+		instance.config.Replace2 = make(map[string]string)
 	} else {
 		err = viper.Unmarshal(&instance.config)
 		if err != nil {
 			logger.WithError(err).Warn("设置文件setu.json的内容无效，使用默认设置")
 			instance.config = new(Config)
-			instance.config.Tian = tian.Query{}
+			instance.config.Replace = make(map[string]string)
+			instance.config.Replace2 = make(map[string]string)
 		}
 	}
 }
@@ -92,6 +97,14 @@ func replace(s string) string {
 	return s
 }
 
+func replace2(s string) string {
+	for k, v := range instance.config.Replace2 {
+		s = strings.ReplaceAll(s, k, v)
+	}
+
+	return s
+}
+
 func onPrivateMessage(qqClient *client.QQClient, msg *message.PrivateMessage) {
 	logger := logger.WithField("from", "onPrivateMessage")
 
@@ -106,15 +119,21 @@ func onPrivateMessage(qqClient *client.QQClient, msg *message.PrivateMessage) {
 		return
 	}
 
-	query := instance.config.Tian
-	query.Question = text
-	query.UniqueID = strconv.FormatInt(msg.Sender.Uin, 10)
-	reply, err := query.Chat()
+	//query := instance.config.Tian
+	//query.Question = text
+	//query.UniqueID = strconv.FormatInt(msg.Sender.Uin, 10)
+	//reply, err := query.Chat()
+
+	req := instance.config.Ownthink
+	req.Spoken = text
+	req.UserID = strconv.FormatInt(msg.Sender.Uin, 10)
+	reply, err := req.Chat()
 	if err != nil {
 		logger.WithError(err).Error("请求出现错误")
 		return
 	}
 	reply = replace(reply)
+	reply = replace2(reply)
 
 	qqbot_utils.SendPrivateText(qqClient, msg.Sender.Uin, reply)
 }
@@ -142,15 +161,21 @@ func onGroupMessage(qqClient *client.QQClient, msg *message.GroupMessage) {
 			return
 		}
 
-		query := instance.config.Tian
-		query.Question = text
-		query.UniqueID = strconv.FormatInt(msg.Sender.Uin, 10)
-		reply, err := query.Chat()
+		//query := instance.config.Tian
+		//query.Question = text
+		//query.UniqueID = strconv.FormatInt(msg.Sender.Uin, 10)
+		//reply, err := query.Chat()
+
+		req := instance.config.Ownthink
+		req.Spoken = text
+		req.UserID = strconv.FormatInt(msg.Sender.Uin, 10)
+		reply, err := req.Chat()
 		if err != nil {
 			logger.WithError(err).Error("请求出现错误")
 			return
 		}
 		reply = replace(reply)
+		reply = replace2(reply)
 
 		qqbot_utils.SendGroupText(qqClient, msg, reply)
 	}

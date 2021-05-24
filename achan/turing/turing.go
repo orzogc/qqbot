@@ -56,14 +56,14 @@ func (r *Request) Chat() (string, error) {
 		return "", err
 	}
 
-	response := new(Response)
-	err = json.Unmarshal(body, response)
+	resp := new(Response)
+	err = json.Unmarshal(body, resp)
 	if err != nil {
 		return "", err
 	}
 
-	replies := make([]string, 0, len(response.Results))
-	for _, r := range response.Results {
+	replies := make([]string, 0, len(resp.Results))
+	for _, r := range resp.Results {
 		replies = append(replies, r.Values.Text)
 	}
 	reply := strings.Join(replies, " ")
