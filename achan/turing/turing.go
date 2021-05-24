@@ -1,11 +1,8 @@
 package turing
 
 import (
-	"bytes"
 	"encoding/json"
-	"io"
-	"log"
-	"net/http"
+	"strings"
 
 	"github.com/orzogc/qqbot/qqbot_utils"
 )
@@ -53,34 +50,23 @@ type Value struct {
 	EmotionID int    `json:"emotionId"`
 }
 
-func (r *Request) Chat() (*Response, error) {
-	data, err := json.Marshal(r)
+func (r *Request) Chat() (string, error) {
+	body, err := qqbot_utils.PostJSON(TuringURL, r)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
-	req, err := http.NewRequest(http.MethodPost, TuringURL, bytes.NewReader(data))
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := qqbot_utils.Client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	log.Printf("%s", string(body))
 
 	response := new(Response)
 	err = json.Unmarshal(body, response)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
-	return response, nil
+	replies := make([]string, 0, len(response.Results))
+	for _, r := range response.Results {
+		replies = append(replies, r.Values.Text)
+	}
+	reply := strings.Join(replies, " ")
+
+	return reply, nil
 }

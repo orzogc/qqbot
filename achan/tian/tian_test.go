@@ -8,9 +8,9 @@ func TestChat(t *testing.T) {
 		Question: "你好",
 		UniqueID: "abc",
 	}
-	resp, err := q.Chat()
+	reply, err := q.Chat()
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Logf("%+v", resp)
+	t.Logf("%s", reply)
 }

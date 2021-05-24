@@ -109,17 +109,11 @@ func onPrivateMessage(qqClient *client.QQClient, msg *message.PrivateMessage) {
 	query := instance.config.Tian
 	query.Question = text
 	query.UniqueID = strconv.FormatInt(msg.Sender.Uin, 10)
-	resp, err := query.Chat()
+	reply, err := query.Chat()
 	if err != nil {
 		logger.WithError(err).Error("请求出现错误")
 		return
 	}
-
-	replies := make([]string, 0, len(resp.NewsList))
-	for _, r := range resp.NewsList {
-		replies = append(replies, r.Reply)
-	}
-	reply := strings.Join(replies, " ")
 	reply = replace(reply)
 
 	qqbot_utils.SendPrivateText(qqClient, msg.Sender.Uin, reply)
@@ -151,17 +145,11 @@ func onGroupMessage(qqClient *client.QQClient, msg *message.GroupMessage) {
 		query := instance.config.Tian
 		query.Question = text
 		query.UniqueID = strconv.FormatInt(msg.Sender.Uin, 10)
-		resp, err := query.Chat()
+		reply, err := query.Chat()
 		if err != nil {
 			logger.WithError(err).Error("请求出现错误")
 			return
 		}
-
-		replies := make([]string, 0, len(resp.NewsList))
-		for _, r := range resp.NewsList {
-			replies = append(replies, r.Reply)
-		}
-		reply := strings.Join(replies, " ")
 		reply = replace(reply)
 
 		qqbot_utils.SendGroupText(qqClient, msg, reply)

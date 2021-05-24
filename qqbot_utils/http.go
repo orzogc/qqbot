@@ -1,6 +1,8 @@
 package qqbot_utils
 
 import (
+	"bytes"
+	"encoding/json"
 	"io"
 	"net/http"
 	"net/url"
@@ -31,6 +33,50 @@ func Get(url string, query url.Values) ([]byte, error) {
 		}
 		req.URL.RawQuery = q.Encode()
 	}
+
+	resp, err := Client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	return body, nil
+}
+
+func PostJSON(url string, v interface{}) ([]byte, error) {
+	data, err := json.Marshal(v)
+	if err != nil {
+		return nil, err
+	}
+	req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(data))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := Client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	return body, nil
+}
+
+func PostForm(url string, form url.Values) ([]byte, error) {
+	req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader([]byte(form.Encode())))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	resp, err := Client.Do(req)
 	if err != nil {
