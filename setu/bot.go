@@ -287,7 +287,6 @@ func sendGroupImage(qqClient *client.QQClient, msg *message.GroupMessage, images
 	logger := logger.WithField("from", "sendGroupImage")
 	reply := message.NewSendingMessage()
 	reply.Append(message.NewReply(msg))
-	reply.Append(message.NewAt(msg.Sender.Uin, "@"+msg.Sender.DisplayName()))
 	reply.Append(message.NewText(instance.config.Reply.Normal))
 	num := 0
 	for _, img := range images {

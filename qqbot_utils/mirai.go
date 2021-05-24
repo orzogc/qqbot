@@ -22,7 +22,6 @@ func SendGroupText(qqClient *client.QQClient, msg *message.GroupMessage, text st
 	logger := logger.WithField("from", "SendGroupText")
 	reply := message.NewSendingMessage()
 	reply.Append(message.NewReply(msg))
-	reply.Append(message.NewAt(msg.Sender.Uin, "@"+msg.Sender.DisplayName()))
 	reply.Append(message.NewText(text))
 	logger.Infof("给QQ群 %d 里的QQ %d 发送消息 %s", msg.GroupCode, msg.Sender.Uin, text)
 	if result := qqClient.SendGroupMessage(msg.GroupCode, reply); result == nil || result.Id <= 0 {
