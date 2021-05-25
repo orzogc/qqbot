@@ -4,11 +4,9 @@ import "testing"
 
 func TestChat(t *testing.T) {
 	q := Query{
-		Key:      "key",
-		Question: "你好",
-		UniqueID: "abc",
+		Key: "key",
 	}
-	reply, err := q.Chat()
+	reply, err := q.Chat("你好", "abc")
 	if err != nil {
 		t.Fatal(err)
 	}

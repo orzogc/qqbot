@@ -3,10 +3,8 @@ package ownthink
 import "testing"
 
 func TestChat(t *testing.T) {
-	req := Request{
-		Spoken: "你好",
-	}
-	reply, err := req.Chat()
+	req := Request{}
+	reply, err := req.Chat("你好", "")
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -50,8 +50,11 @@ type Value struct {
 	EmotionID int    `json:"emotionId"`
 }
 
-func (r *Request) Chat() (string, error) {
-	body, err := qqbot_utils.PostJSON(TuringURL, r)
+func (r *Request) Chat(text string, id string) (string, error) {
+	req := *r
+	content := Content{Data: text}
+	req.Data.Content = []Content{content}
+	body, err := qqbot_utils.PostJSON(TuringURL, &req)
 	if err != nil {
 		return "", err
 	}

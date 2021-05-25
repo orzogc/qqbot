@@ -33,8 +33,11 @@ func (r *Response) IsSuccess() bool {
 	return r.Message == "success"
 }
 
-func (r *Request) Chat() (string, error) {
-	body, err := qqbot_utils.PostJSON(OwnthinkURL, r)
+func (r *Request) Chat(text string, id string) (string, error) {
+	req := *r
+	req.Spoken = text
+	req.UserID = id
+	body, err := qqbot_utils.PostJSON(OwnthinkURL, &req)
 	if err != nil {
 		return "", err
 	}

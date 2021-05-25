@@ -44,18 +44,18 @@ type Code int
 
 const Success Code = 200
 
-func (q *Query) Chat() (string, error) {
+func (q *Query) Chat(text string, id string) (string, error) {
 	query := url.Values{}
 	if q.Key == "" {
 		return "", fmt.Errorf("Key不能为空")
 	}
 	query.Add(Key, q.Key)
-	if q.Question == "" {
-		return "", fmt.Errorf("Question不能为空")
+	if text == "" {
+		return "", fmt.Errorf("text不能为空")
 	}
-	query.Add(Question, q.Question)
-	if q.UniqueID != "" {
-		query.Add(UniqueID, q.UniqueID)
+	query.Add(Question, text)
+	if id != "" {
+		query.Add(UniqueID, id)
 	}
 	if q.Mode != 0 {
 		if q.Mode > 2 {
