@@ -198,7 +198,7 @@ func onPrivateMessage(qqClient *client.QQClient, msg *message.PrivateMessage) {
 
 	images, err := getImage(texts)
 	if err != nil {
-		logger.WithError(err).Error("获取图片失败")
+		logger.WithError(err).WithField("privateMessage", msg.ToString()).Error("获取图片失败")
 		if errors.Is(err, errorNoCommand) {
 			qqbot_utils.SendPrivateText(qqClient, msg.Sender.Uin, instance.config.Reply.NoCommand)
 		} else if errors.Is(err, lolicon.ErrorKeywordNotFound) || errors.Is(err, pixiv.ErrorSearchFailed) {
@@ -230,7 +230,7 @@ func sendPrivateImage(qqClient *client.QQClient, qq int64, images [][]byte) {
 			r := bytes.NewReader(img)
 			element, err := qqClient.UploadPrivateImage(qq, r)
 			if err != nil {
-				logger.WithError(err).Error("上传私聊图片失败")
+				logger.WithError(err).WithField("receiverQQ", qq).Error("上传私聊图片失败")
 				continue
 			}
 			reply.Append(element)
@@ -238,9 +238,9 @@ func sendPrivateImage(qqClient *client.QQClient, qq int64, images [][]byte) {
 		}
 	}
 	if num != 0 {
-		logger.Infof("给QQ %d 发送 %d 张图片", qq, num)
+		logger.WithField("receiverQQ", qq).Infof("发送 %d 张私聊图片", num)
 		if result := qqClient.SendPrivateMessage(qq, reply); result == nil || result.Id <= 0 {
-			logger.Errorf("给QQ %d 发送图片失败", qq)
+			logger.WithField("receiverQQ", qq).Error("发送私聊图片失败")
 			qqbot_utils.SendPrivateText(qqClient, qq, instance.config.Reply.SendImageFailed)
 		}
 	} else {
@@ -274,7 +274,7 @@ func onGroupMessage(qqClient *client.QQClient, msg *message.GroupMessage) {
 		texts = strings.Fields(text)
 		images, err := getImage(texts)
 		if err != nil {
-			logger.WithError(err).Error("获取图片失败")
+			logger.WithError(err).WithField("groupMessage", msg.ToString()).Error("获取图片失败")
 			if errors.Is(err, errorNoCommand) {
 				qqbot_utils.ReplyGroupText(qqClient, msg, instance.config.Reply.NoCommand)
 			} else if errors.Is(err, lolicon.ErrorKeywordNotFound) || errors.Is(err, pixiv.ErrorSearchFailed) {
@@ -308,7 +308,10 @@ func sendGroupImage(qqClient *client.QQClient, msg *message.GroupMessage, images
 			r := bytes.NewReader(img)
 			element, err := qqClient.UploadGroupImage(msg.GroupCode, r)
 			if err != nil {
-				logger.WithError(err).Error("上传群聊图片失败")
+				logger.WithError(err).
+					WithField("qqGroup", msg.GroupCode).
+					WithField("receiverQQ", msg.Sender.Uin).
+					Error("上传群聊图片失败")
 				continue
 			}
 			reply.Append(element)
@@ -316,9 +319,14 @@ func sendGroupImage(qqClient *client.QQClient, msg *message.GroupMessage, images
 		}
 	}
 	if num != 0 {
-		logger.Infof("给QQ群 %d 里的QQ %d 发送 %d 张图片", msg.GroupCode, msg.Sender.Uin, num)
+		logger.WithField("qqGroup", msg.GroupCode).
+			WithField("receiverQQ", msg.Sender.Uin).
+			Infof("发送 %d 张群聊图片", num)
 		if result := qqClient.SendGroupMessage(msg.GroupCode, reply); result == nil || result.Id <= 0 {
-			logger.Errorf("给QQ群 %d 发送图片失败", msg.GroupCode)
+			logger.
+				WithField("qqGroup", msg.GroupCode).
+				WithField("receiverQQ", msg.Sender.Uin).
+				Error("发送群聊图片失败")
 			qqbot_utils.ReplyGroupText(qqClient, msg, instance.config.Reply.SendImageFailed)
 		}
 	} else {

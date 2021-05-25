@@ -13,6 +13,7 @@ import (
 	"github.com/spf13/viper"
 
 	_ "github.com/orzogc/qqbot/achan"
+	_ "github.com/orzogc/qqbot/logmessage"
 	"github.com/orzogc/qqbot/qqbot_utils"
 	_ "github.com/orzogc/qqbot/reconnect"
 	_ "github.com/orzogc/qqbot/setu"
@@ -20,7 +21,7 @@ import (
 
 // 读取配置
 func loadConfig() {
-	logger := logrus.WithField("config", "GlobalConfig")
+	logger := logrus.WithField("from", "loadConfig")
 
 	config.GlobalConfig = &config.Config{
 		Viper: viper.New(),

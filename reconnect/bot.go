@@ -48,30 +48,32 @@ func (b *ReconnectBot) Stop(bot *bot.Bot, wg *sync.WaitGroup) {
 	defer wg.Done()
 }
 
+func onDisconnected(qqClient *client.QQClient, event *client.ClientDisconnectedEvent) {
+	logger := logger.WithField("from", "onDisconnected")
+	logger.WithField("reason", event.Message).Warn("bot已离线，尝试重连")
+	time.Sleep(waitTime)
+
+	resp, err := qqClient.Login()
+	if err != nil {
+		logger.Error("bot重连失败，请重启本bot")
+		return
+	}
+	if !resp.Success {
+		switch resp.Error {
+		case client.NeedCaptcha:
+			logger.Error("bot重连失败：需要验证码，请重启本bot")
+		case client.UnsafeDeviceError:
+			logger.Error("bot重连失败：设备锁")
+			logger.Errorf("bot的QQ帐号已开启设备锁，请前往 %s 验证并重启本bot", resp.VerifyUrl)
+		default:
+			logger.Errorf("bot重连失败，请重启本bot，响应为：%+v", resp)
+		}
+	} else {
+		logger.Info("bot重连成功")
+	}
+}
+
 // 注册mirai事件函数
 func registerBot(b *bot.Bot) {
-	b.OnDisconnected(func(qqClient *client.QQClient, event *client.ClientDisconnectedEvent) {
-		logger := logger.WithField("from", "OnDisconnected")
-		logger.WithField("reason", event.Message).Warn("bot已离线，尝试重连")
-		time.Sleep(waitTime)
-
-		resp, err := qqClient.Login()
-		if err != nil {
-			logger.Error("bot重连失败，请重启本bot")
-			return
-		}
-		if !resp.Success {
-			switch resp.Error {
-			case client.NeedCaptcha:
-				logger.Error("bot重连失败：需要验证码，请重启本bot")
-			case client.UnsafeDeviceError:
-				logger.Error("bot重连失败：设备锁")
-				logger.Errorf("bot的QQ帐号已开启设备锁，请前往 %s 验证并重启本bot", resp.VerifyUrl)
-			default:
-				logger.Errorf("bot重连失败，请重启本bot，响应为：%+v", resp)
-			}
-		} else {
-			logger.Info("bot重连成功")
-		}
-	})
+	b.OnDisconnected(onDisconnected)
 }
