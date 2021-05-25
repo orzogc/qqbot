@@ -13,5 +13,6 @@ var (
 )
 
 type AI interface {
-	Chat(text string, id string) (string, error)
+	Chat() (string, error)
+	ChatWith(text string, id string) (string, error)
 }

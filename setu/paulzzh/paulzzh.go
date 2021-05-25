@@ -7,7 +7,6 @@ import (
 	"net/url"
 
 	"github.com/orzogc/qqbot/qqbot_utils"
-	"github.com/orzogc/qqbot/setu/setu_utils"
 )
 
 const (
@@ -43,6 +42,15 @@ type Response struct {
 	Tags      string `json:"tags"`
 	Timestamp int64  `json:"timestamp"`
 	URL       string `json:"url"`
+}
+
+func isLetter(s string) bool {
+	for _, r := range s {
+		if (r < 'a' || r > 'z') && (r < 'A' || r > 'Z') && r != ' ' {
+			return false
+		}
+	}
+	return true
 }
 
 func (r *Response) GetImage() ([]byte, error) {
@@ -81,7 +89,7 @@ func (p *Paulzzh) GetTouhouImage() ([]byte, error) {
 		query.Add(Proxy, "0")
 	}
 	if p.Tag != "" {
-		if !setu_utils.IsLetter(p.Tag) {
+		if !isLetter(p.Tag) {
 			return nil, fmt.Errorf("%w：%s", ErrorTag, p.Tag)
 		}
 		query.Add(Tag, p.Tag)
@@ -113,7 +121,7 @@ func (p *Paulzzh) GetTouhouImage() ([]byte, error) {
 func (p *Paulzzh) GetImage(keyword string) ([][]byte, error) {
 	paulzzh := *p
 	paulzzh.Tag = keyword
-	img, err := p.GetTouhouImage()
+	img, err := paulzzh.GetTouhouImage()
 	if err != nil {
 		return nil, err
 	}

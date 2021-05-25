@@ -119,7 +119,7 @@ func onPrivateMessage(qqClient *client.QQClient, msg *message.PrivateMessage) {
 		return
 	}
 
-	reply, err := instance.config.Ownthink.Chat(text, strconv.FormatInt(msg.Sender.Uin, 10))
+	reply, err := instance.config.Ownthink.ChatWith(text, strconv.FormatInt(msg.Sender.Uin, 10))
 	if err != nil {
 		logger.WithError(err).Error("请求出现错误")
 		return
@@ -153,7 +153,7 @@ func onGroupMessage(qqClient *client.QQClient, msg *message.GroupMessage) {
 			return
 		}
 
-		reply, err := instance.config.Ownthink.Chat(text, strconv.FormatInt(msg.Sender.Uin, 10))
+		reply, err := instance.config.Ownthink.ChatWith(text, strconv.FormatInt(msg.Sender.Uin, 10))
 		if err != nil {
 			logger.WithError(err).Error("请求出现错误")
 			return

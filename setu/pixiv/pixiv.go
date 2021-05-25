@@ -121,9 +121,15 @@ func (p *Pixiv) GetImage(keyword string) ([][]byte, error) {
 	}
 	wg.Wait()
 
-	if len(images) == 0 {
+	img := make([][]byte, 0, len(images))
+	for _, i := range images {
+		if len(i) != 0 {
+			img = append(img, i)
+		}
+	}
+	if len(img) == 0 {
 		return nil, fmt.Errorf("获取pixiv图片失败")
 	}
 
-	return images, nil
+	return img, nil
 }

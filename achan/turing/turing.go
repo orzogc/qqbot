@@ -50,11 +50,8 @@ type Value struct {
 	EmotionID int    `json:"emotionId"`
 }
 
-func (t *Turing) Chat(text string, id string) (string, error) {
-	turing := *t
-	content := Content{Data: text}
-	turing.Data.Content = []Content{content}
-	body, err := qqbot_utils.PostJSON(TuringURL, &turing)
+func (t *Turing) Chat() (string, error) {
+	body, err := qqbot_utils.PostJSON(TuringURL, t)
 	if err != nil {
 		return "", err
 	}
@@ -72,4 +69,12 @@ func (t *Turing) Chat(text string, id string) (string, error) {
 	reply := strings.Join(replies, " ")
 
 	return reply, nil
+}
+
+func (t *Turing) ChatWith(text string, id string) (string, error) {
+	turing := *t
+	content := Content{Data: text}
+	turing.Data.Content = []Content{content}
+
+	return turing.Chat()
 }

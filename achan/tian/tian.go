@@ -44,18 +44,18 @@ type Code int
 
 const Success Code = 200
 
-func (t *Tian) Chat(text string, id string) (string, error) {
+func (t *Tian) Chat() (string, error) {
 	query := url.Values{}
 	if t.Key == "" {
 		return "", fmt.Errorf("Key不能为空")
 	}
 	query.Add(Key, t.Key)
-	if text == "" {
-		return "", fmt.Errorf("text不能为空")
+	if t.Question == "" {
+		return "", fmt.Errorf("Question不能为空")
 	}
-	query.Add(Question, text)
-	if id != "" {
-		query.Add(UniqueID, id)
+	query.Add(Question, t.Question)
+	if t.UniqueID != "" {
+		query.Add(UniqueID, t.UniqueID)
 	}
 	if t.Mode != 0 {
 		if t.Mode > 2 {
@@ -96,6 +96,14 @@ func (t *Tian) Chat(text string, id string) (string, error) {
 	reply := strings.Join(replies, " ")
 
 	return reply, nil
+}
+
+func (t *Tian) ChatWith(text string, id string) (string, error) {
+	tian := *t
+	tian.Question = text
+	tian.UniqueID = id
+
+	return tian.Chat()
 }
 
 func (r *Response) IsSuccess() bool {

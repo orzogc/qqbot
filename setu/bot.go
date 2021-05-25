@@ -24,11 +24,8 @@ import (
 const SetuID = "setu"
 
 var (
-	instance = &SetuBot{}
-	logger   = utils.GetModuleLogger(SetuID)
-)
-
-var (
+	instance       = &SetuBot{}
+	logger         = utils.GetModuleLogger(SetuID)
 	errorNoCommand = errors.New("没有发现有效的命令")
 )
 
@@ -60,7 +57,7 @@ type Config struct {
 type SetuBot struct {
 	config   *Config
 	pixiv    *pixiv.Pixiv
-	commands map[string][]string
+	commands map[string][]Setu
 }
 
 func init() {
@@ -92,13 +89,11 @@ func (b *SetuBot) Init() {
 	if err != nil {
 		logger.WithError(err).Warn("读取设置文件setu.json失败，使用默认设置")
 		instance.config = new(Config)
-		instance.commands = make(map[string][]string)
 	} else {
 		err = viper.Unmarshal(&instance.config)
 		if err != nil {
 			logger.WithError(err).Warn("设置文件setu.json的内容无效，使用默认设置")
 			instance.config = new(Config)
-			instance.commands = make(map[string][]string)
 		}
 	}
 
@@ -142,14 +137,26 @@ func (b *SetuBot) Init() {
 	instance.pixiv = pixiv.New(instance.config.Pixiv.PHPSESSID)
 	instance.pixiv.SearchOption = &instance.config.Pixiv.SearchOption
 
-	instance.commands = make(map[string][]string)
+	cmd := map[string]Setu{
+		lolicon.ID:              &instance.config.Lolicon,
+		islandwind233.AnimeID:   &islandwind233.Anime{},
+		islandwind233.CosplayID: &islandwind233.Cosplay{},
+		paulzzh.ID:              &instance.config.Paulzzh,
+		pixiv.ID:                instance.pixiv,
+	}
+	instance.commands = make(map[string][]Setu)
 	for k, v := range instance.config.Commands {
+		setu, ok := cmd[k]
+		if !ok {
+			logger.Warnf("未知的命令ID：%s", k)
+			continue
+		}
 		for _, s := range v {
 			if c, ok := instance.commands[s]; ok {
-				c = append(c, k)
+				c = append(c, setu)
 				instance.commands[s] = c
 			} else {
-				instance.commands[s] = []string{k}
+				instance.commands[s] = []Setu{setu}
 			}
 		}
 	}
@@ -314,7 +321,7 @@ func getImage(texts []string) ([][]byte, error) {
 
 	var hasCommand bool
 	keywords := make([]string, 0, len(texts))
-	cmd := make(map[string]struct{})
+	cmd := make(map[Setu]struct{})
 	for _, t := range texts {
 		var isCommand bool
 		if strings.Contains(t, "#") {
@@ -335,6 +342,7 @@ func getImage(texts []string) ([][]byte, error) {
 	if !hasCommand {
 		return nil, errorNoCommand
 	}
+	keyword := strings.Join(keywords, " ")
 
 	var images [][]byte
 	var e error
@@ -342,76 +350,19 @@ func getImage(texts []string) ([][]byte, error) {
 	var wg sync.WaitGroup
 	for s := range cmd {
 		wg.Add(1)
-		go func(s string) {
+		go func(s Setu) {
 			defer wg.Done()
-
-			switch s {
-			case lolicon.ID:
-				img, err := instance.config.Lolicon.GetImage(strings.Join(keywords, " "))
-				if err != nil {
-					logger.WithError(err).Error("获取lolicon图片失败")
-					mu.Lock()
-					e = err
-					mu.Unlock()
-					break
-				}
+			img, err := s.GetImage(keyword)
+			if err != nil {
+				logger.WithError(err).Error("获取图片失败")
 				mu.Lock()
-				images = append(images, img...)
-				mu.Unlock()
-			case islandwind233.AnimeID:
-				anime := &islandwind233.Anime{}
-				img, err := anime.GetImage("")
-				if err != nil {
-					logger.WithError(err).Error("获取anime图片失败")
-					mu.Lock()
-					e = err
-					mu.Unlock()
-					break
-				}
-				mu.Lock()
-				images = append(images, img...)
-				mu.Unlock()
-			case islandwind233.CosplayID:
-				cosplay := &islandwind233.Cosplay{}
-				img, err := cosplay.GetImage("")
-				if err != nil {
-					logger.WithError(err).Error("获取cos图片失败")
-					mu.Lock()
-					e = err
-					mu.Unlock()
-					break
-				}
-				mu.Lock()
-				images = append(images, img...)
-				mu.Unlock()
-			case paulzzh.ID:
-				img, err := instance.config.Paulzzh.GetImage(strings.Join(keywords, " "))
-				if err != nil {
-					logger.WithError(err).Error("获取东方图片失败")
-					mu.Lock()
-					e = err
-					mu.Unlock()
-					break
-				}
-				mu.Lock()
-				images = append(images, img...)
-				mu.Unlock()
-			case pixiv.ID:
-				pixiv := *instance.pixiv
-				img, err := pixiv.GetImage(strings.Join(keywords, " "))
-				if err != nil {
-					logger.WithError(err).Error("获取pixiv图片失败")
-					mu.Lock()
-					e = err
-					mu.Unlock()
-					break
-				}
-				mu.Lock()
-				images = append(images, img...)
-				mu.Unlock()
-			default:
-				logger.Warnf("未知的图片接口：%s", s)
+				defer mu.Unlock()
+				e = err
+				return
 			}
+			mu.Lock()
+			defer mu.Unlock()
+			images = append(images, img...)
 		}(s)
 	}
 	wg.Wait()

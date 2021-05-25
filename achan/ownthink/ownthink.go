@@ -33,11 +33,8 @@ func (r *Response) IsSuccess() bool {
 	return r.Message == "success"
 }
 
-func (o *Ownthink) Chat(text string, id string) (string, error) {
-	ownthink := *o
-	ownthink.Spoken = text
-	ownthink.UserID = id
-	body, err := qqbot_utils.PostJSON(OwnthinkURL, &ownthink)
+func (o *Ownthink) Chat() (string, error) {
+	body, err := qqbot_utils.PostJSON(OwnthinkURL, o)
 	if err != nil {
 		return "", err
 	}
@@ -52,4 +49,12 @@ func (o *Ownthink) Chat(text string, id string) (string, error) {
 	}
 
 	return resp.Data.Info.Text, nil
+}
+
+func (o *Ownthink) ChatWith(text string, id string) (string, error) {
+	ownthink := *o
+	ownthink.Spoken = text
+	ownthink.UserID = id
+
+	return ownthink.Chat()
 }
