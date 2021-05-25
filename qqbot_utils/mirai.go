@@ -8,8 +8,9 @@ import (
 
 var logger = logrus.New()
 
+// 发送私聊文字
 func SendPrivateText(qqClient *client.QQClient, qq int64, text string) {
-	logger := logger.WithField("from", "SendPrivateMessage")
+	logger := logger.WithField("from", "SendPrivateText")
 	reply := message.NewSendingMessage()
 	reply.Append(message.NewText(text))
 	logger.Infof("给QQ %d 发送消息 %s", qq, text)
@@ -18,7 +19,8 @@ func SendPrivateText(qqClient *client.QQClient, qq int64, text string) {
 	}
 }
 
-func SendGroupText(qqClient *client.QQClient, msg *message.GroupMessage, text string) {
+// 回复群聊文字
+func ReplyGroupText(qqClient *client.QQClient, msg *message.GroupMessage, text string) {
 	logger := logger.WithField("from", "SendGroupText")
 	reply := message.NewSendingMessage()
 	reply.Append(message.NewReply(msg))

@@ -15,6 +15,8 @@ var (
 	_ Setu = (*pixiv.Pixiv)(nil)
 )
 
+// 图片接口
 type Setu interface {
+	// 获取图片，keyword为搜索关键字，可以不支持搜索，可返回多个图片
 	GetImage(keyword string) ([][]byte, error)
 }

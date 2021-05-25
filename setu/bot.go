@@ -21,45 +21,51 @@ import (
 	"github.com/spf13/viper"
 )
 
+// ID
 const SetuID = "setu"
 
 var (
-	instance       = &SetuBot{}
-	logger         = utils.GetModuleLogger(SetuID)
+	instance       = &SetuBot{}                    // 机器人实例
+	logger         = utils.GetModuleLogger(SetuID) // 日志记录
 	errorNoCommand = errors.New("没有发现有效的命令")
 )
 
+// 回复配置
 type Reply struct {
-	Normal            string `json:"normal"`
-	NoCommand         string `json:"noCommand"`
-	GetImageFailed    string `json:"getImageFailed"`
-	UploadImageFailed string `json:"uploadImageFailed"`
-	SendImageFailed   string `json:"sendImageFailed"`
-	KeywordNotFound   string `json:"keywordNotFound"`
-	QuotaLimit        string `json:"quotaLimit"`
-	TagError          string `json:"tagError"`
-	NoTagError        string `json:"noTagError"`
+	Normal            string `json:"normal"`            // 正常回复
+	NoCommand         string `json:"noCommand"`         // 找不到命令的回复
+	GetImageFailed    string `json:"getImageFailed"`    // 获取图片失败的回复
+	UploadImageFailed string `json:"uploadImageFailed"` // 上传图片失败的回复
+	SendImageFailed   string `json:"sendImageFailed"`   // 发送图片是版的回复
+	KeywordNotFound   string `json:"keywordNotFound"`   // 搜索图片失败的回复
+	QuotaLimit        string `json:"quotaLimit"`        // 达到接口额度的回复
+	TagError          string `json:"tagError"`          // 搜索关键字错误的回复
+	NoTagError        string `json:"noTagError"`        // 没有搜索关键字的回复
 }
 
+// pixiv配置
 type PixivConfig struct {
-	PHPSESSID    string             `json:"phpsessid"`
-	SearchOption pixiv.SearchOption `json:"searchOption"`
+	PHPSESSID    string             `json:"phpsessid"`    // pixiv网页Cookie里的PHPSESSID，为空的话没有r18图片
+	SearchOption pixiv.SearchOption `json:"searchOption"` // 搜索选项
 }
 
+// 配置
 type Config struct {
-	Lolicon  lolicon.Lolicon     `json:"lolicon"`
-	Paulzzh  paulzzh.Paulzzh     `json:"paulzzh"`
-	Pixiv    PixivConfig         `json:"pixiv"`
-	Commands map[string][]string `json:"commands"`
-	Reply    Reply               `json:"reply"`
+	Lolicon  lolicon.Lolicon     `json:"lolicon"`  // lolicon的配置，keyword是无效的
+	Paulzzh  paulzzh.Paulzzh     `json:"paulzzh"`  // paulzzh的配置，tag是无效的
+	Pixiv    PixivConfig         `json:"pixiv"`    // pixiv的配置
+	Commands map[string][]string `json:"commands"` // 命令关键字
+	Reply    Reply               `json:"reply"`    // 回复配置
 }
 
+// 图片机器人
 type SetuBot struct {
 	config   *Config
 	pixiv    *pixiv.Pixiv
 	commands map[string][]Setu
 }
 
+// 初始化
 func init() {
 	bot.RegisterModule(instance)
 }
@@ -174,6 +180,7 @@ func (b *SetuBot) Stop(bot *bot.Bot, wg *sync.WaitGroup) {
 	defer wg.Done()
 }
 
+// 处理私聊
 func onPrivateMessage(qqClient *client.QQClient, msg *message.PrivateMessage) {
 	logger := logger.WithField("from", "onPrivateMessage")
 
@@ -212,6 +219,7 @@ func onPrivateMessage(qqClient *client.QQClient, msg *message.PrivateMessage) {
 	sendPrivateImage(qqClient, msg.Sender.Uin, images)
 }
 
+// 发送私聊图片
 func sendPrivateImage(qqClient *client.QQClient, qq int64, images [][]byte) {
 	logger := logger.WithField("from", "sendPrivateImage")
 	reply := message.NewSendingMessage()
@@ -240,6 +248,7 @@ func sendPrivateImage(qqClient *client.QQClient, qq int64, images [][]byte) {
 	}
 }
 
+// 处理群聊
 func onGroupMessage(qqClient *client.QQClient, msg *message.GroupMessage) {
 	logger := logger.WithField("from", "onGroupMessage")
 
@@ -267,17 +276,17 @@ func onGroupMessage(qqClient *client.QQClient, msg *message.GroupMessage) {
 		if err != nil {
 			logger.WithError(err).Error("获取图片失败")
 			if errors.Is(err, errorNoCommand) {
-				qqbot_utils.SendGroupText(qqClient, msg, instance.config.Reply.NoCommand)
+				qqbot_utils.ReplyGroupText(qqClient, msg, instance.config.Reply.NoCommand)
 			} else if errors.Is(err, lolicon.ErrorKeywordNotFound) || errors.Is(err, pixiv.ErrorSearchFailed) {
-				qqbot_utils.SendGroupText(qqClient, msg, instance.config.Reply.KeywordNotFound)
+				qqbot_utils.ReplyGroupText(qqClient, msg, instance.config.Reply.KeywordNotFound)
 			} else if errors.Is(err, lolicon.ErrorQuotaLimit) {
-				qqbot_utils.SendGroupText(qqClient, msg, instance.config.Reply.QuotaLimit)
+				qqbot_utils.ReplyGroupText(qqClient, msg, instance.config.Reply.QuotaLimit)
 			} else if errors.Is(err, paulzzh.ErrorTag) {
-				qqbot_utils.SendGroupText(qqClient, msg, instance.config.Reply.TagError)
+				qqbot_utils.ReplyGroupText(qqClient, msg, instance.config.Reply.TagError)
 			} else if errors.Is(err, pixiv.ErrorNoTag) {
-				qqbot_utils.SendGroupText(qqClient, msg, instance.config.Reply.NoTagError)
+				qqbot_utils.ReplyGroupText(qqClient, msg, instance.config.Reply.NoTagError)
 			} else {
-				qqbot_utils.SendGroupText(qqClient, msg, instance.config.Reply.GetImageFailed)
+				qqbot_utils.ReplyGroupText(qqClient, msg, instance.config.Reply.GetImageFailed)
 			}
 			if len(images) == 0 {
 				return
@@ -287,6 +296,7 @@ func onGroupMessage(qqClient *client.QQClient, msg *message.GroupMessage) {
 	}
 }
 
+// 发送群聊图片
 func sendGroupImage(qqClient *client.QQClient, msg *message.GroupMessage, images [][]byte) {
 	logger := logger.WithField("from", "sendGroupImage")
 	reply := message.NewSendingMessage()
@@ -309,13 +319,14 @@ func sendGroupImage(qqClient *client.QQClient, msg *message.GroupMessage, images
 		logger.Infof("给QQ群 %d 里的QQ %d 发送 %d 张图片", msg.GroupCode, msg.Sender.Uin, num)
 		if result := qqClient.SendGroupMessage(msg.GroupCode, reply); result == nil || result.Id <= 0 {
 			logger.Errorf("给QQ群 %d 发送图片失败", msg.GroupCode)
-			qqbot_utils.SendGroupText(qqClient, msg, instance.config.Reply.SendImageFailed)
+			qqbot_utils.ReplyGroupText(qqClient, msg, instance.config.Reply.SendImageFailed)
 		}
 	} else {
-		qqbot_utils.SendGroupText(qqClient, msg, instance.config.Reply.UploadImageFailed)
+		qqbot_utils.ReplyGroupText(qqClient, msg, instance.config.Reply.UploadImageFailed)
 	}
 }
 
+// 获取图片
 func getImage(texts []string) ([][]byte, error) {
 	logger := logger.WithField("from", "getImage")
 
@@ -377,6 +388,7 @@ func getImage(texts []string) ([][]byte, error) {
 	return images, e
 }
 
+// 注册mirai事件函数
 func registerBot(b *bot.Bot) {
 	b.OnPrivateMessage(onPrivateMessage)
 	b.OnGroupMessage(onGroupMessage)

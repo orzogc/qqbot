@@ -18,7 +18,8 @@ import (
 	_ "github.com/orzogc/qqbot/setu"
 )
 
-func setConfig() {
+// 读取配置
+func loadConfig() {
 	logger := logrus.WithField("config", "GlobalConfig")
 
 	config.GlobalConfig = &config.Config{
@@ -54,7 +55,7 @@ func main() {
 		return
 	}
 
-	setConfig()
+	loadConfig()
 
 	bot.Init()
 	bot.StartService()

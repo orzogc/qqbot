@@ -9,16 +9,19 @@ import (
 	"time"
 )
 
+// http客户端
 var Client = &http.Client{
 	Timeout: 20 * time.Second,
 }
 
+// 设置http客户端的超时
 func SetTimeout(second uint) {
 	Client = &http.Client{
 		Timeout: time.Duration(second) * time.Second,
 	}
 }
 
+// http get
 func Get(url string, query url.Values) ([]byte, error) {
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
@@ -47,6 +50,7 @@ func Get(url string, query url.Values) ([]byte, error) {
 	return body, nil
 }
 
+// http post json
 func PostJSON(url string, v interface{}) ([]byte, error) {
 	data, err := json.Marshal(v)
 	if err != nil {
@@ -71,6 +75,7 @@ func PostJSON(url string, v interface{}) ([]byte, error) {
 	return body, nil
 }
 
+// http post form urlencoded
 func PostForm(url string, form url.Values) ([]byte, error) {
 	req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader([]byte(form.Encode())))
 	if err != nil {

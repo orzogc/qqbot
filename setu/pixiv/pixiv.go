@@ -16,6 +16,7 @@ import (
 	"github.com/orzogc/qqbot/setu/setu_utils"
 )
 
+// ID
 const ID = "pixiv"
 
 var (
@@ -23,23 +24,26 @@ var (
 	ErrorSearchFailed = errors.New("没找到关键字对应的pixiv图片")
 )
 
+// 搜索选项
 type SearchOption struct {
-	Page              uint                  `json:"page"`
-	Order             artwork.Order         `json:"order"`
-	ContentRating     artwork.ContentRating `json:"contentRating"`
-	Mode              artwork.SearchMode    `json:"mode"`
-	WidthLessThan     uint64                `json:"widthLessThan"`
-	WidthGreaterThan  uint64                `json:"widthGreaterThan"`
-	HeightLessThan    uint64                `json:"heightLessThan"`
-	HeightGreaterThan uint64                `json:"heightGreaterThan"`
+	Page              uint                  `json:"page"`              // 搜索返回的页数
+	Order             artwork.Order         `json:"order"`             // 搜索排序
+	ContentRating     artwork.ContentRating `json:"contentRating"`     // 搜索返回是否有r18内容，登陆pixiv帐号才有r18内容
+	Mode              artwork.SearchMode    `json:"mode"`              // 搜索模式
+	WidthLessThan     uint64                `json:"widthLessThan"`     // 搜索图片的大小限制
+	WidthGreaterThan  uint64                `json:"widthGreaterThan"`  // 搜索图片的大小限制
+	HeightLessThan    uint64                `json:"heightLessThan"`    // 搜索图片的大小限制
+	HeightGreaterThan uint64                `json:"heightGreaterThan"` // 搜索图片的大小限制
 }
 
+// pixiv
 type Pixiv struct {
 	ctx          context.Context
 	SearchOption *SearchOption
 }
 
-func login(PHPSESSID string) context.Context {
+// 设置pixiv，PHPSESSID为pixiv帐号Cookie的PHPSESSID，PHPSESSID为空时不登陆任何帐号
+func config(PHPSESSID string) context.Context {
 	c := &client.Client{}
 	c.SetDefaultHeader("User-Agent", client.DefaultUserAgent)
 	if PHPSESSID != "" {
@@ -50,13 +54,15 @@ func login(PHPSESSID string) context.Context {
 	return client.With(ctx, c)
 }
 
+// 新建Pixiv，PHPSESSID为pixiv帐号Cookie的PHPSESSID，PHPSESSID为空时不登陆任何帐号
 func New(PHPSESSID string) *Pixiv {
 	return &Pixiv{
-		ctx:          login(PHPSESSID),
+		ctx:          config(PHPSESSID),
 		SearchOption: new(SearchOption),
 	}
 }
 
+// 获取图片，实现Setu接口
 func (p *Pixiv) GetImage(keyword string) ([][]byte, error) {
 	if keyword == "" {
 		return nil, ErrorNoTag

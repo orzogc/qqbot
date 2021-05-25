@@ -17,24 +17,28 @@ import (
 	"github.com/spf13/viper"
 )
 
+// ID
 const AchanID = "achan"
 
 var (
-	instance = &AchanBot{}
-	logger   = utils.GetModuleLogger(AchanID)
+	instance = &AchanBot{}                    // 机器人实例
+	logger   = utils.GetModuleLogger(AchanID) // 日志记录
 )
 
+// 配置
 type Config struct {
-	Tian     tian.Tian         `json:"tian"`
-	Ownthink ownthink.Ownthink `json:"ownthink"`
-	Replace  map[string]string `json:"replace"`
-	Replace2 map[string]string `json:"replace2"`
+	Tian     tian.Tian         `json:"tian"`     // 天行机器人的配置
+	Ownthink ownthink.Ownthink `json:"ownthink"` // 思知机器人的配置
+	Replace  map[string]string `json:"replace"`  // 词语替换
+	Replace2 map[string]string `json:"replace2"` // 词语替换第二层
 }
 
+// 聊天机器人
 type AchanBot struct {
 	config *Config
 }
 
+// 初始化
 func init() {
 	bot.RegisterModule(instance)
 }
@@ -89,6 +93,7 @@ func (b *AchanBot) Stop(bot *bot.Bot, wg *sync.WaitGroup) {
 	defer wg.Done()
 }
 
+// 替换词语
 func replace(s string) string {
 	for k, v := range instance.config.Replace {
 		s = strings.ReplaceAll(s, k, v)
@@ -97,6 +102,7 @@ func replace(s string) string {
 	return s
 }
 
+// 替换词语
 func replace2(s string) string {
 	for k, v := range instance.config.Replace2 {
 		s = strings.ReplaceAll(s, k, v)
@@ -105,6 +111,7 @@ func replace2(s string) string {
 	return s
 }
 
+// 处理私聊
 func onPrivateMessage(qqClient *client.QQClient, msg *message.PrivateMessage) {
 	logger := logger.WithField("from", "onPrivateMessage")
 
@@ -130,6 +137,7 @@ func onPrivateMessage(qqClient *client.QQClient, msg *message.PrivateMessage) {
 	qqbot_utils.SendPrivateText(qqClient, msg.Sender.Uin, reply)
 }
 
+// 处理群聊
 func onGroupMessage(qqClient *client.QQClient, msg *message.GroupMessage) {
 	logger := logger.WithField("from", "onGroupMessage")
 
@@ -161,10 +169,11 @@ func onGroupMessage(qqClient *client.QQClient, msg *message.GroupMessage) {
 		reply = replace(reply)
 		reply = replace2(reply)
 
-		qqbot_utils.SendGroupText(qqClient, msg, reply)
+		qqbot_utils.ReplyGroupText(qqClient, msg, reply)
 	}
 }
 
+// 注册mirai事件函数
 func registerBot(b *bot.Bot) {
 	b.OnPrivateMessage(onPrivateMessage)
 	b.OnGroupMessage(onGroupMessage)

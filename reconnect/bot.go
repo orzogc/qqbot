@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	ReconnectID = "reconnect"
+	ReconnectID = "reconnect" // ID
 	waitTime    = 10 * time.Second
 )
 
@@ -19,8 +19,10 @@ var (
 	logger   = utils.GetModuleLogger(ReconnectID)
 )
 
+// 负责重连帐号的bot
 type ReconnectBot struct{}
 
+// 初始化
 func init() {
 	bot.RegisterModule(instance)
 }
@@ -46,6 +48,7 @@ func (b *ReconnectBot) Stop(bot *bot.Bot, wg *sync.WaitGroup) {
 	defer wg.Done()
 }
 
+// 注册mirai事件函数
 func registerBot(b *bot.Bot) {
 	b.OnDisconnected(func(qqClient *client.QQClient, event *client.ClientDisconnectedEvent) {
 		logger := logger.WithField("from", "OnDisconnected")
