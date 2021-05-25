@@ -49,15 +49,14 @@ type Code int
 // 返回成功
 const Success Code = 200
 
-// 聊天，实现AI接口
-func (t *Tian) Chat() (string, error) {
+func (t *Tian) query() (url.Values, error) {
 	query := url.Values{}
 	if t.Key == "" {
-		return "", fmt.Errorf("Key不能为空")
+		return nil, fmt.Errorf("Key不能为空")
 	}
 	query.Add(key, t.Key)
 	if t.Question == "" {
-		return "", fmt.Errorf("Question不能为空")
+		return nil, fmt.Errorf("Question不能为空")
 	}
 	query.Add(question, t.Question)
 	if t.UniqueID != "" {
@@ -65,38 +64,57 @@ func (t *Tian) Chat() (string, error) {
 	}
 	if t.Mode != 0 {
 		if t.Mode > 2 {
-			return "", fmt.Errorf("Mode必须为0、1或2，现为%d", t.Mode)
+			return nil, fmt.Errorf("Mode必须为0、1或2，现为%d", t.Mode)
 		}
 		query.Add(mode, strconv.FormatUint(uint64(t.Mode), 10))
 	}
 	if t.Priv != 0 {
 		if t.Priv > 4 {
-			return "", fmt.Errorf("Priv必须为0到4，现为%d", t.Priv)
+			return nil, fmt.Errorf("Priv必须为0到4，现为%d", t.Priv)
 		}
 		query.Add(priv, strconv.FormatUint(uint64(t.Priv), 10))
 	}
 	if t.Restype != 0 {
 		if t.Restype > 2 {
-			return "", fmt.Errorf("Restype必须为0、1或2，现为%d", t.Restype)
+			return nil, fmt.Errorf("Restype必须为0、1或2，现为%d", t.Restype)
 		}
 		query.Add(restype, strconv.FormatUint(uint64(t.Restype), 10))
 	}
 
+	return query, nil
+}
+
+// 请求
+func (t *Tian) Request() (*Response, error) {
+	query, err := t.query()
+	if err != nil {
+		return nil, err
+	}
 	body, err := qqbot_utils.Get(TianURL, query)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	r := new(Response)
 	if err = json.Unmarshal(body, r); err != nil {
-		return "", err
-	}
-	if !r.IsSuccess() {
-		return "", fmt.Errorf("天行机器人接口返回错误，错误码：%d，错误信息：%s", r.Code, r.Msg)
+		return nil, err
 	}
 
-	replies := make([]string, 0, len(r.NewsList))
-	for _, r := range r.NewsList {
+	return r, nil
+}
+
+// 聊天，实现AI接口
+func (t *Tian) Chat() (string, error) {
+	resp, err := t.Request()
+	if err != nil {
+		return "", err
+	}
+	if !resp.IsSuccess() {
+		return "", fmt.Errorf("天行机器人接口返回错误，错误码：%d，错误信息：%s", resp.Code, resp.Msg)
+	}
+
+	replies := make([]string, 0, len(resp.NewsList))
+	for _, r := range resp.NewsList {
 		replies = append(replies, r.Reply)
 	}
 	reply := strings.Join(replies, " ")
@@ -113,7 +131,7 @@ func (t *Tian) ChatWith(text string, id string) (string, error) {
 	return tian.Chat()
 }
 
-// 检查返回是否成功
+// 检查响应是否成功
 func (r *Response) IsSuccess() bool {
 	return r.Code == Success
 }

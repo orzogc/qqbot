@@ -33,20 +33,25 @@ type Response struct {
 	Data    Data   `json:"data"`    // 返回数据
 }
 
-// 检查请求是否成功
-func (r *Response) IsSuccess() bool {
-	return r.Message == "success"
-}
-
-// 聊天，实现AI接口
-func (o *Ownthink) Chat() (string, error) {
+// 请求
+func (o *Ownthink) Request() (*Response, error) {
 	body, err := qqbot_utils.PostJSON(OwnthinkURL, o)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	resp := new(Response)
 	err = json.Unmarshal(body, resp)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
+
+// 聊天，实现AI接口
+func (o *Ownthink) Chat() (string, error) {
+	resp, err := o.Request()
 	if err != nil {
 		return "", err
 	}
@@ -64,4 +69,9 @@ func (o *Ownthink) ChatWith(text string, id string) (string, error) {
 	ownthink.UserID = id
 
 	return ownthink.Chat()
+}
+
+// 检查响应是否成功
+func (r *Response) IsSuccess() bool {
+	return r.Message == "success"
 }
