@@ -9,11 +9,20 @@ const (
 
 type Cosplay struct{}
 
-func (c *Cosplay) GetImage() ([][]byte, error) {
+func (c *Cosplay) GetCosplayImage() ([]byte, error) {
 	body, err := qqbot_utils.Get(CosplayURL, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	return [][]byte{body}, nil
+	return body, nil
+}
+
+func (c *Cosplay) GetImage(keyword string) ([][]byte, error) {
+	img, err := c.GetCosplayImage()
+	if err != nil {
+		return nil, err
+	}
+
+	return [][]byte{img}, nil
 }

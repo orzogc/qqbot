@@ -6,7 +6,7 @@ import (
 
 func TestAnime(t *testing.T) {
 	a := &Anime{}
-	img, err := a.GetImage()
+	img, err := a.GetImage("")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -17,7 +17,7 @@ func TestAnime(t *testing.T) {
 
 func TestCosplay(t *testing.T) {
 	c := &Cosplay{}
-	img, err := c.GetImage()
+	img, err := c.GetImage("")
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -20,7 +20,7 @@ const (
 	Restype  = "restype"
 )
 
-type Query struct {
+type Tian struct {
 	Key      string `json:"key"`
 	Question string `json:"question"`
 	UniqueID string `json:"uniqueid"`
@@ -44,12 +44,12 @@ type Code int
 
 const Success Code = 200
 
-func (q *Query) Chat(text string, id string) (string, error) {
+func (t *Tian) Chat(text string, id string) (string, error) {
 	query := url.Values{}
-	if q.Key == "" {
+	if t.Key == "" {
 		return "", fmt.Errorf("Key不能为空")
 	}
-	query.Add(Key, q.Key)
+	query.Add(Key, t.Key)
 	if text == "" {
 		return "", fmt.Errorf("text不能为空")
 	}
@@ -57,23 +57,23 @@ func (q *Query) Chat(text string, id string) (string, error) {
 	if id != "" {
 		query.Add(UniqueID, id)
 	}
-	if q.Mode != 0 {
-		if q.Mode > 2 {
-			return "", fmt.Errorf("Mode必须为0、1或2，现为%d", q.Mode)
+	if t.Mode != 0 {
+		if t.Mode > 2 {
+			return "", fmt.Errorf("Mode必须为0、1或2，现为%d", t.Mode)
 		}
-		query.Add(Mode, strconv.FormatUint(uint64(q.Mode), 10))
+		query.Add(Mode, strconv.FormatUint(uint64(t.Mode), 10))
 	}
-	if q.Priv != 0 {
-		if q.Priv > 4 {
-			return "", fmt.Errorf("Priv必须为0到4，现为%d", q.Priv)
+	if t.Priv != 0 {
+		if t.Priv > 4 {
+			return "", fmt.Errorf("Priv必须为0到4，现为%d", t.Priv)
 		}
-		query.Add(Priv, strconv.FormatUint(uint64(q.Priv), 10))
+		query.Add(Priv, strconv.FormatUint(uint64(t.Priv), 10))
 	}
-	if q.Restype != 0 {
-		if q.Restype > 2 {
-			return "", fmt.Errorf("Restype必须为0、1或2，现为%d", q.Restype)
+	if t.Restype != 0 {
+		if t.Restype > 2 {
+			return "", fmt.Errorf("Restype必须为0、1或2，现为%d", t.Restype)
 		}
-		query.Add(Restype, strconv.FormatUint(uint64(q.Restype), 10))
+		query.Add(Restype, strconv.FormatUint(uint64(t.Restype), 10))
 	}
 
 	body, err := qqbot_utils.Get(TianURL, query)

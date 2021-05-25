@@ -2,6 +2,7 @@ package lolicon
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -24,7 +25,7 @@ const (
 	Size1200   = "size1200"
 )
 
-type Query struct {
+type Lolicon struct {
 	APIKey   string `json:"apikey"`
 	R18      uint   `json:"r18"`
 	Keyword  string `json:"keyword"`
@@ -67,37 +68,37 @@ const (
 )
 
 var (
-	ErrorInternal        = fmt.Errorf("lolicon内部错误")
-	ErrorAPIKey          = fmt.Errorf("apikey不存在或被封禁")
-	ErrorRefuse          = fmt.Errorf("由于不规范的操作而被拒绝调用")
-	ErrorKeywordNotFound = fmt.Errorf("找不到符合关键字的图片")
-	ErrorQuotaLimit      = fmt.Errorf("达到调用额度限制")
+	ErrorInternal        = errors.New("lolicon内部错误")
+	ErrorAPIKey          = errors.New("apikey不存在或被封禁")
+	ErrorRefuse          = errors.New("由于不规范的操作而被拒绝调用")
+	ErrorKeywordNotFound = errors.New("找不到符合关键字的图片")
+	ErrorQuotaLimit      = errors.New("达到调用额度限制")
 )
 
-func (q *Query) Lolicon() (*Response, error) {
+func (l *Lolicon) Lolicon() (*Response, error) {
 	query := url.Values{}
-	if q.APIKey != "" {
-		query.Add(APIKey, q.APIKey)
+	if l.APIKey != "" {
+		query.Add(APIKey, l.APIKey)
 	}
-	if q.R18 != 0 {
-		if q.R18 > 2 {
-			return nil, fmt.Errorf("R18必须为0、1或2，现为%d", q.R18)
+	if l.R18 != 0 {
+		if l.R18 > 2 {
+			return nil, fmt.Errorf("R18必须为0、1或2，现为%d", l.R18)
 		}
-		query.Add(R18, strconv.FormatUint(uint64(q.R18), 10))
+		query.Add(R18, strconv.FormatUint(uint64(l.R18), 10))
 	}
-	if q.Keyword != "" {
-		query.Add(Keyword, q.Keyword)
+	if l.Keyword != "" {
+		query.Add(Keyword, l.Keyword)
 	}
-	if q.Num != 0 {
-		if q.Num > 10 {
-			return nil, fmt.Errorf("Num必须为0到10，现为%d", q.Num)
+	if l.Num != 0 {
+		if l.Num > 10 {
+			return nil, fmt.Errorf("Num必须为0到10，现为%d", l.Num)
 		}
-		query.Add(Num, strconv.FormatUint(uint64(q.Num), 10))
+		query.Add(Num, strconv.FormatUint(uint64(l.Num), 10))
 	}
-	if q.Proxy != "" {
-		query.Add(Proxy, q.Proxy)
+	if l.Proxy != "" {
+		query.Add(Proxy, l.Proxy)
 	}
-	if q.Size1200 {
+	if l.Size1200 {
 		query.Add(Size1200, "1")
 	}
 
@@ -114,8 +115,10 @@ func (q *Query) Lolicon() (*Response, error) {
 	return r, nil
 }
 
-func (q *Query) GetImage() ([][]byte, error) {
-	r, err := q.Lolicon()
+func (l *Lolicon) GetImage(keyword string) ([][]byte, error) {
+	lolicon := *l
+	lolicon.Keyword = keyword
+	r, err := lolicon.Lolicon()
 	if err != nil {
 		return nil, err
 	}

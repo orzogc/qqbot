@@ -3,7 +3,7 @@ package tian
 import "testing"
 
 func TestChat(t *testing.T) {
-	q := Query{
+	q := Tian{
 		Key: "key",
 	}
 	reply, err := q.Chat("你好", "abc")

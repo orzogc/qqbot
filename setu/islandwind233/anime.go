@@ -11,11 +11,20 @@ const (
 
 type Anime struct{}
 
-func (a *Anime) GetImage() ([][]byte, error) {
+func (a *Anime) GetAnimeImage() ([]byte, error) {
 	body, err := qqbot_utils.Get(AnimeURL, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	return [][]byte{body}, nil
+	return body, nil
+}
+
+func (a *Anime) GetImage(keyword string) ([][]byte, error) {
+	img, err := a.GetAnimeImage()
+	if err != nil {
+		return nil, err
+	}
+
+	return [][]byte{img}, nil
 }

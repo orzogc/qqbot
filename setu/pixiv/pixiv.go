@@ -2,6 +2,7 @@ package pixiv
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"math/rand"
@@ -17,7 +18,10 @@ import (
 
 const ID = "pixiv"
 
-var ErrorSearchFailed = fmt.Errorf("没找到关键字对应的pixiv图片")
+var (
+	ErrorNoTag        = errors.New("pixiv图片搜索没有关键字")
+	ErrorSearchFailed = errors.New("没找到关键字对应的pixiv图片")
+)
 
 type SearchOption struct {
 	Page              uint                  `json:"page"`
@@ -32,7 +36,6 @@ type SearchOption struct {
 
 type Pixiv struct {
 	ctx          context.Context
-	Tags         string
 	SearchOption *SearchOption
 }
 
@@ -49,11 +52,16 @@ func login(PHPSESSID string) context.Context {
 
 func New(PHPSESSID string) *Pixiv {
 	return &Pixiv{
-		ctx: login(PHPSESSID),
+		ctx:          login(PHPSESSID),
+		SearchOption: new(SearchOption),
 	}
 }
 
-func (p *Pixiv) GetImage() ([][]byte, error) {
+func (p *Pixiv) GetImage(keyword string) ([][]byte, error) {
+	if keyword == "" {
+		return nil, ErrorNoTag
+	}
+
 	if p.SearchOption.Order != artwork.OrderDateDSC && p.SearchOption.Order != artwork.OrderDateASC {
 		return nil, fmt.Errorf("Order必须为空或date，，现为%s", p.SearchOption.Order)
 	}
@@ -64,7 +72,7 @@ func (p *Pixiv) GetImage() ([][]byte, error) {
 		return nil, fmt.Errorf("Mode必须为空、s_tag或s_tc，，现为%s", p.SearchOption.Mode)
 	}
 
-	result, err := artwork.Search(p.ctx, p.Tags, func(op *artwork.SearchOptions) {
+	result, err := artwork.Search(p.ctx, keyword, func(op *artwork.SearchOptions) {
 		op.Page = int(p.SearchOption.Page)
 		op.Order = p.SearchOption.Order
 		op.ContentRating = p.SearchOption.ContentRating
@@ -80,7 +88,7 @@ func (p *Pixiv) GetImage() ([][]byte, error) {
 	artworks := result.Artworks()
 	rand.Seed(time.Now().UnixNano())
 	if len(artworks) == 0 {
-		return nil, fmt.Errorf("%w：%s", ErrorSearchFailed, p.Tags)
+		return nil, fmt.Errorf("%w：%s", ErrorSearchFailed, keyword)
 	}
 	art := artworks[rand.Intn(len(artworks))]
 	art.FetchPages(p.ctx)

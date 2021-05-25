@@ -5,8 +5,8 @@ import (
 )
 
 func TestLolicon(t *testing.T) {
-	q := &Query{}
-	resp, err := q.Lolicon()
+	l := &Lolicon{}
+	resp, err := l.Lolicon()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -17,10 +17,10 @@ func TestLolicon(t *testing.T) {
 }
 
 func TestGetImage(t *testing.T) {
-	q := &Query{
+	l := &Lolicon{
 		Proxy: "disable",
 	}
-	img, err := q.GetImage()
+	img, err := l.GetImage("")
 	if err != nil {
 		t.Fatal(err)
 	}

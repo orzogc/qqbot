@@ -5,11 +5,11 @@ import (
 )
 
 func TestGetImage302(t *testing.T) {
-	query := Query{
+	p := Paulzzh{
 		Size:  "wap",
 		Proxy: 1,
 	}
-	img, err := query.GetImage()
+	img, err := p.GetImage("")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -19,12 +19,12 @@ func TestGetImage302(t *testing.T) {
 }
 
 func TestGetImageJSON(t *testing.T) {
-	query := Query{
+	p := Paulzzh{
 		Type:  "json",
 		Site:  "yandere",
 		Proxy: 1,
 	}
-	img, err := query.GetImage()
+	img, err := p.GetImage("")
 	if err != nil {
 		t.Fatal(err)
 	}

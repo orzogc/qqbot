@@ -9,7 +9,7 @@ import (
 
 const TuringURL = "https://api.turingos.cn/turingos/api/v2"
 
-type Request struct {
+type Turing struct {
 	Data      Data   `json:"data"`
 	Key       string `json:"key"`
 	Timestamp string `json:"timestamp"`
@@ -50,11 +50,11 @@ type Value struct {
 	EmotionID int    `json:"emotionId"`
 }
 
-func (r *Request) Chat(text string, id string) (string, error) {
-	req := *r
+func (t *Turing) Chat(text string, id string) (string, error) {
+	turing := *t
 	content := Content{Data: text}
-	req.Data.Content = []Content{content}
-	body, err := qqbot_utils.PostJSON(TuringURL, &req)
+	turing.Data.Content = []Content{content}
+	body, err := qqbot_utils.PostJSON(TuringURL, &turing)
 	if err != nil {
 		return "", err
 	}

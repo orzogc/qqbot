@@ -18,7 +18,6 @@ import (
 	"github.com/orzogc/qqbot/setu/lolicon"
 	"github.com/orzogc/qqbot/setu/paulzzh"
 	"github.com/orzogc/qqbot/setu/pixiv"
-	"github.com/orzogc/qqbot/setu/setu_utils"
 	"github.com/spf13/viper"
 )
 
@@ -31,8 +30,6 @@ var (
 
 var (
 	errorNoCommand = errors.New("没有发现有效的命令")
-	errorTag       = errors.New("东方图片搜索关键字包含非英文字母")
-	errorNoTag     = errors.New("pixiv图片搜索没有关键字")
 )
 
 type Reply struct {
@@ -53,8 +50,8 @@ type PixivConfig struct {
 }
 
 type Config struct {
-	Lolicon  lolicon.Query       `json:"lolicon"`
-	Paulzzh  paulzzh.Query       `json:"paulzzh"`
+	Lolicon  lolicon.Lolicon     `json:"lolicon"`
+	Paulzzh  paulzzh.Paulzzh     `json:"paulzzh"`
 	Pixiv    PixivConfig         `json:"pixiv"`
 	Commands map[string][]string `json:"commands"`
 	Reply    Reply               `json:"reply"`
@@ -194,9 +191,9 @@ func onPrivateMessage(qqClient *client.QQClient, msg *message.PrivateMessage) {
 			qqbot_utils.SendPrivateText(qqClient, msg.Sender.Uin, instance.config.Reply.KeywordNotFound)
 		} else if errors.Is(err, lolicon.ErrorQuotaLimit) {
 			qqbot_utils.SendPrivateText(qqClient, msg.Sender.Uin, instance.config.Reply.QuotaLimit)
-		} else if errors.Is(err, errorTag) {
+		} else if errors.Is(err, paulzzh.ErrorTag) {
 			qqbot_utils.SendPrivateText(qqClient, msg.Sender.Uin, instance.config.Reply.TagError)
-		} else if errors.Is(err, errorNoTag) {
+		} else if errors.Is(err, pixiv.ErrorNoTag) {
 			qqbot_utils.SendPrivateText(qqClient, msg.Sender.Uin, instance.config.Reply.NoTagError)
 		} else {
 			qqbot_utils.SendPrivateText(qqClient, msg.Sender.Uin, instance.config.Reply.GetImageFailed)
@@ -268,9 +265,9 @@ func onGroupMessage(qqClient *client.QQClient, msg *message.GroupMessage) {
 				qqbot_utils.SendGroupText(qqClient, msg, instance.config.Reply.KeywordNotFound)
 			} else if errors.Is(err, lolicon.ErrorQuotaLimit) {
 				qqbot_utils.SendGroupText(qqClient, msg, instance.config.Reply.QuotaLimit)
-			} else if errors.Is(err, errorTag) {
+			} else if errors.Is(err, paulzzh.ErrorTag) {
 				qqbot_utils.SendGroupText(qqClient, msg, instance.config.Reply.TagError)
-			} else if errors.Is(err, errorNoTag) {
+			} else if errors.Is(err, pixiv.ErrorNoTag) {
 				qqbot_utils.SendGroupText(qqClient, msg, instance.config.Reply.NoTagError)
 			} else {
 				qqbot_utils.SendGroupText(qqClient, msg, instance.config.Reply.GetImageFailed)
@@ -350,12 +347,7 @@ func getImage(texts []string) ([][]byte, error) {
 
 			switch s {
 			case lolicon.ID:
-				query := instance.config.Lolicon
-				if query.Keyword != "" {
-					keywords = append(keywords, query.Keyword)
-				}
-				query.Keyword = strings.Join(keywords, " ")
-				img, err := query.GetImage()
+				img, err := instance.config.Lolicon.GetImage(strings.Join(keywords, " "))
 				if err != nil {
 					logger.WithError(err).Error("获取lolicon图片失败")
 					mu.Lock()
@@ -368,7 +360,7 @@ func getImage(texts []string) ([][]byte, error) {
 				mu.Unlock()
 			case islandwind233.AnimeID:
 				anime := &islandwind233.Anime{}
-				img, err := anime.GetImage()
+				img, err := anime.GetImage("")
 				if err != nil {
 					logger.WithError(err).Error("获取anime图片失败")
 					mu.Lock()
@@ -381,7 +373,7 @@ func getImage(texts []string) ([][]byte, error) {
 				mu.Unlock()
 			case islandwind233.CosplayID:
 				cosplay := &islandwind233.Cosplay{}
-				img, err := cosplay.GetImage()
+				img, err := cosplay.GetImage("")
 				if err != nil {
 					logger.WithError(err).Error("获取cos图片失败")
 					mu.Lock()
@@ -393,19 +385,7 @@ func getImage(texts []string) ([][]byte, error) {
 				images = append(images, img...)
 				mu.Unlock()
 			case paulzzh.ID:
-				query := instance.config.Paulzzh
-				if query.Tag != "" {
-					keywords = append(keywords, query.Tag)
-				}
-				query.Tag = strings.Join(keywords, " ")
-				if !setu_utils.IsLetter(query.Tag) {
-					logger.WithError(errorTag).Errorf("错误Tag：%s", query.Tag)
-					mu.Lock()
-					e = errorTag
-					mu.Unlock()
-					break
-				}
-				img, err := query.GetImage()
+				img, err := instance.config.Paulzzh.GetImage(strings.Join(keywords, " "))
 				if err != nil {
 					logger.WithError(err).Error("获取东方图片失败")
 					mu.Lock()
@@ -417,16 +397,8 @@ func getImage(texts []string) ([][]byte, error) {
 				images = append(images, img...)
 				mu.Unlock()
 			case pixiv.ID:
-				if len(keywords) == 0 {
-					logger.WithError(errorNoTag).Error("没有关键字")
-					mu.Lock()
-					e = errorNoTag
-					mu.Unlock()
-					break
-				}
 				pixiv := *instance.pixiv
-				pixiv.Tags = strings.Join(keywords, " ")
-				img, err := pixiv.GetImage()
+				img, err := pixiv.GetImage(strings.Join(keywords, " "))
 				if err != nil {
 					logger.WithError(err).Error("获取pixiv图片失败")
 					mu.Lock()

@@ -2,10 +2,12 @@ package paulzzh
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/url"
 
 	"github.com/orzogc/qqbot/qqbot_utils"
+	"github.com/orzogc/qqbot/setu/setu_utils"
 )
 
 const (
@@ -18,7 +20,9 @@ const (
 	Tag        = "tag"
 )
 
-type Query struct {
+var ErrorTag = errors.New("paulzzh东方图片搜索关键字包含非英文字母")
+
+type Paulzzh struct {
 	Type  string `json:"type"`
 	Site  string `json:"site"`
 	Size  string `json:"size"`
@@ -41,52 +45,55 @@ type Response struct {
 	URL       string `json:"url"`
 }
 
-func (r *Response) GetImage() ([][]byte, error) {
+func (r *Response) GetImage() ([]byte, error) {
 	body, err := qqbot_utils.Get(r.URL, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	return [][]byte{body}, nil
+	return body, nil
 }
 
-func (q *Query) GetImage() ([][]byte, error) {
+func (p *Paulzzh) GetTouhouImage() ([]byte, error) {
 	query := url.Values{}
-	if q.Type != "" {
-		if q.Type != "302" && q.Type != "json" {
-			return nil, fmt.Errorf("Type必须为302或json，现为%s", q.Type)
+	if p.Type != "" {
+		if p.Type != "302" && p.Type != "json" {
+			return nil, fmt.Errorf("Type必须为302或json，现为%s", p.Type)
 		}
-		query.Add(Type, q.Type)
+		query.Add(Type, p.Type)
 	}
-	if q.Site != "" {
-		if q.Site != "konachan" && q.Site != "yandere" && q.Site != "all" {
-			return nil, fmt.Errorf("Site必须为konachan、yandere或all，现为%s", q.Site)
+	if p.Site != "" {
+		if p.Site != "konachan" && p.Site != "yandere" && p.Site != "all" {
+			return nil, fmt.Errorf("Site必须为konachan、yandere或all，现为%s", p.Site)
 		}
-		query.Add(Site, q.Site)
+		query.Add(Site, p.Site)
 	}
-	if q.Size != "" {
-		if q.Size != "pc" && q.Size != "wap" && q.Size != "all" {
-			return nil, fmt.Errorf("Size必须为pc、wap或all，现为%s", q.Size)
+	if p.Size != "" {
+		if p.Size != "pc" && p.Size != "wap" && p.Size != "all" {
+			return nil, fmt.Errorf("Size必须为pc、wap或all，现为%s", p.Size)
 		}
-		query.Add(Size, q.Size)
+		query.Add(Size, p.Size)
 	}
-	if q.Proxy != 1 {
-		if q.Proxy != 0 {
-			return nil, fmt.Errorf("Proxy必须为0或1，现为%d", q.Proxy)
+	if p.Proxy != 1 {
+		if p.Proxy != 0 {
+			return nil, fmt.Errorf("Proxy必须为0或1，现为%d", p.Proxy)
 		}
 		query.Add(Proxy, "0")
 	}
-	if q.Tag != "" {
-		query.Add(Tag, q.Tag)
+	if p.Tag != "" {
+		if !setu_utils.IsLetter(p.Tag) {
+			return nil, fmt.Errorf("%w：%s", ErrorTag, p.Tag)
+		}
+		query.Add(Tag, p.Tag)
 	}
 
-	if q.Type == "json" {
+	if p.Type == "json" {
 		body, err := qqbot_utils.Get(PaulzzhURL, query)
 		if err != nil {
 			return nil, err
 		}
 		if !json.Valid(body) {
-			return [][]byte{body}, nil
+			return body, nil
 		}
 		resp := new(Response)
 		err = json.Unmarshal(body, resp)
@@ -100,6 +107,16 @@ func (q *Query) GetImage() ([][]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	return body, nil
+}
 
-	return [][]byte{body}, nil
+func (p *Paulzzh) GetImage(keyword string) ([][]byte, error) {
+	paulzzh := *p
+	paulzzh.Tag = keyword
+	img, err := p.GetTouhouImage()
+	if err != nil {
+		return nil, err
+	}
+
+	return [][]byte{img}, nil
 }

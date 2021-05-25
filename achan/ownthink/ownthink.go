@@ -9,7 +9,7 @@ import (
 
 const OwnthinkURL = "https://api.ownthink.com/bot"
 
-type Request struct {
+type Ownthink struct {
 	Spoken string `json:"spoken"`
 	AppID  string `json:"appid"`
 	UserID string `json:"userid"`
@@ -33,11 +33,11 @@ func (r *Response) IsSuccess() bool {
 	return r.Message == "success"
 }
 
-func (r *Request) Chat(text string, id string) (string, error) {
-	req := *r
-	req.Spoken = text
-	req.UserID = id
-	body, err := qqbot_utils.PostJSON(OwnthinkURL, &req)
+func (o *Ownthink) Chat(text string, id string) (string, error) {
+	ownthink := *o
+	ownthink.Spoken = text
+	ownthink.UserID = id
+	body, err := qqbot_utils.PostJSON(OwnthinkURL, &ownthink)
 	if err != nil {
 		return "", err
 	}

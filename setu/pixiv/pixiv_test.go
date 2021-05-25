@@ -6,12 +6,11 @@ import (
 
 func TestPixiv(t *testing.T) {
 	p := New("")
-	p.Tags = "acfun"
-	img, err := p.GetImage()
+	img, err := p.GetImage("acfun")
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(img) == 0 {
-		t.Fatal("failed to get image from lolicon")
+		t.Fatal("failed to get image from pixiv")
 	}
 }

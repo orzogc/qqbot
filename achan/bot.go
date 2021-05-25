@@ -25,8 +25,8 @@ var (
 )
 
 type Config struct {
-	Tian     tian.Query        `json:"tian"`
-	Ownthink ownthink.Request  `json:"ownthink"`
+	Tian     tian.Tian         `json:"tian"`
+	Ownthink ownthink.Ownthink `json:"ownthink"`
 	Replace  map[string]string `json:"replace"`
 	Replace2 map[string]string `json:"replace2"`
 }

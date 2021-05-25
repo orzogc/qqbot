@@ -7,9 +7,9 @@ import (
 )
 
 var (
-	_ AI = (*tian.Query)(nil)
-	_ AI = (*turing.Request)(nil)
-	_ AI = (*ownthink.Request)(nil)
+	_ AI = (*tian.Tian)(nil)
+	_ AI = (*turing.Turing)(nil)
+	_ AI = (*ownthink.Ownthink)(nil)
 )
 
 type AI interface {
