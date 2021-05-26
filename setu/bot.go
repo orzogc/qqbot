@@ -59,10 +59,10 @@ type Config struct {
 
 // 图片机器人
 type SetuBot struct {
-	config        *Config
-	pixiv         *pixiv.Pixiv
-	commands      map[string][]Setu
-	otherCommands map[string]struct{}
+	config        *Config             // 配置
+	pixiv         *pixiv.Pixiv        // pixiv
+	commands      map[string][]Setu   // 命令
+	otherCommands map[string]struct{} // 其他机器人的命令
 }
 
 // 初始化

@@ -11,18 +11,21 @@ import (
 var logger = logrus.New()
 
 // 发送私聊文字
-func SendPrivateText(qqClient *client.QQClient, qq int64, text string) {
+func SendPrivateText(qqClient *client.QQClient, qq int64, text string) bool {
 	logger := logger.WithField("from", "SendPrivateText")
 	reply := message.NewSendingMessage()
 	reply.Append(message.NewText(text))
 	logger.WithField("receiverQQ", qq).WithField("text", text).Info("发送私聊消息")
 	if result := qqClient.SendPrivateMessage(qq, reply); result == nil || result.Id <= 0 {
 		logger.WithField("receiverQQ", qq).WithField("text", text).Error("发送私聊消息失败")
+		return false
 	}
+
+	return true
 }
 
 // 回复群聊文字
-func ReplyGroupText(qqClient *client.QQClient, msg *message.GroupMessage, text string) {
+func ReplyGroupText(qqClient *client.QQClient, msg *message.GroupMessage, text string) bool {
 	logger := logger.WithField("from", "ReplyGroupText")
 	reply := message.NewSendingMessage()
 	reply.Append(message.NewReply(msg))
@@ -36,7 +39,10 @@ func ReplyGroupText(qqClient *client.QQClient, msg *message.GroupMessage, text s
 			WithField("receiverQQ", msg.Sender.Uin).
 			WithField("text", text).
 			Error("发送群聊消息失败")
+		return false
 	}
+
+	return true
 }
 
 // 获取私聊消息里的文本

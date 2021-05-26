@@ -3,6 +3,8 @@ package search
 import (
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 
@@ -13,6 +15,7 @@ import (
 	"github.com/orzogc/qqbot/qqbot_utils"
 	"github.com/orzogc/qqbot/search/google"
 	"github.com/orzogc/qqbot/search/search_utils"
+	"github.com/spf13/viper"
 )
 
 const SearchID = "search" // ID
@@ -22,10 +25,23 @@ var (
 	logger   = utils.GetModuleLogger(SearchID) // 日志记录
 )
 
+// 回复配置
+type Reply struct {
+	SearchFailed     string `json:"searchFailed"`
+	SendResultFailed string `json:"sendResultFailed"`
+}
+
+// 配置
+type Config struct {
+	Commands map[string][]string `json:"commands"` // 命令关键字
+	Reply    Reply               `json:"reply"`    // 回复配置
+}
+
 // 负责网页搜索的bot
 type SearchBot struct {
-	commands      map[string]Search
-	otherCommands map[string]struct{}
+	config        *Config             // 配置
+	commands      map[string][]Search // 命令
+	otherCommands map[string]struct{} // 其他机器人的命令
 }
 
 // 初始化
@@ -41,12 +57,63 @@ func (b *SearchBot) MiraiGoModule() bot.ModuleInfo {
 }
 
 func (b *SearchBot) Init() {
-	instance.commands = map[string]Search{
+	logger := logger.WithField("from", "Init")
+	viper := viper.New()
+	viper.SetConfigName(SearchID)
+	viper.SetConfigType("json")
+	path, err := os.Executable()
+	if err != nil {
+		logger.WithError(err).Panic("获取执行文件所在位置失败")
+	}
+
+	dir := filepath.Dir(path)
+	viper.AddConfigPath(dir)
+	viper.AddConfigPath(".")
+
+	err = viper.ReadInConfig()
+	if err != nil {
+		logger.WithError(err).Warn("读取设置文件search.json失败，使用默认设置")
+		instance.config = new(Config)
+	} else {
+		err = viper.Unmarshal(&instance.config)
+		if err != nil {
+			logger.WithError(err).Warn("设置文件search.json的内容无效，使用默认设置")
+			instance.config = new(Config)
+		}
+	}
+
+	if len(instance.config.Commands) == 0 {
+		instance.config.Commands = map[string][]string{
+			google.GoogleID: {"google"},
+		}
+	}
+	if instance.config.Reply.SearchFailed == "" {
+		instance.config.Reply.SearchFailed = "搜索网页失败"
+	}
+	if instance.config.Reply.SendResultFailed == "" {
+		instance.config.Reply.SendResultFailed = "发送搜索结果失败"
+	}
+
+	cmd := map[string]Search{
 		google.GoogleID: &google.Google{},
 	}
+	instance.commands = make(map[string][]Search)
 	instance.otherCommands = make(map[string]struct{})
-	for c := range instance.commands {
-		qqbot_utils.AllCommands[c] = struct{}{}
+	for k, v := range instance.config.Commands {
+		search, ok := cmd[k]
+		if !ok {
+			logger.Warnf("未知的命令ID：%s", k)
+			continue
+		}
+		for _, s := range v {
+			if c, ok := instance.commands[s]; ok {
+				c = append(c, search)
+				instance.commands[s] = c
+			} else {
+				instance.commands[s] = []Search{search}
+			}
+			qqbot_utils.AllCommands[s] = struct{}{}
+		}
 	}
 }
 
@@ -83,14 +150,16 @@ func onPrivateMessage(qqClient *client.QQClient, msg *message.PrivateMessage) {
 		if errors.Is(err, qqbot_utils.ErrorNoCommand) {
 			//qqbot_utils.SendPrivateText(qqClient, msg.Sender.Uin, "未知命令")
 		} else {
-			qqbot_utils.SendPrivateText(qqClient, msg.Sender.Uin, "搜索网页失败")
+			qqbot_utils.SendPrivateText(qqClient, msg.Sender.Uin, instance.config.Reply.SearchFailed)
 		}
 		if result == "" {
 			return
 		}
 	}
 	if result != "" {
-		qqbot_utils.SendPrivateText(qqClient, msg.Sender.Uin, result)
+		if ok := qqbot_utils.SendPrivateText(qqClient, msg.Sender.Uin, result); !ok {
+			qqbot_utils.SendPrivateText(qqClient, msg.Sender.Uin, instance.config.Reply.SendResultFailed)
+		}
 	}
 }
 
@@ -109,14 +178,16 @@ func onGroupMessage(qqClient *client.QQClient, msg *message.GroupMessage) {
 			if errors.Is(err, qqbot_utils.ErrorNoCommand) {
 				//qqbot_utils.ReplyGroupText(qqClient, msg, "未知命令")
 			} else {
-				qqbot_utils.ReplyGroupText(qqClient, msg, "搜索网页失败")
+				qqbot_utils.ReplyGroupText(qqClient, msg, instance.config.Reply.SearchFailed)
 			}
 			if result == "" {
 				return
 			}
 		}
 		if result != "" {
-			qqbot_utils.ReplyGroupText(qqClient, msg, result)
+			if ok := qqbot_utils.ReplyGroupText(qqClient, msg, result); !ok {
+				qqbot_utils.ReplyGroupText(qqClient, msg, instance.config.Reply.SendResultFailed)
+			}
 		}
 	}
 }
@@ -137,7 +208,9 @@ func search(text string) (string, error) {
 				if strings.Contains(t, k) {
 					hasCommand = true
 					isCommand = true
-					cmd[v] = struct{}{}
+					for _, c := range v {
+						cmd[c] = struct{}{}
+					}
 				}
 			}
 			for k := range instance.otherCommands {

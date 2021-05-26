@@ -35,7 +35,7 @@ type Config struct {
 
 // 聊天机器人
 type AchanBot struct {
-	config *Config
+	config *Config // 配置
 }
 
 // 初始化
