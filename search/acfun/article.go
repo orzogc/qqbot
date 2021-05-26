@@ -21,6 +21,7 @@ type AcFunArticle struct{}
 func (a *AcFunArticle) Search(text string) ([]search_utils.SearchResult, error) {
 	query := url.Values{}
 	query.Add(keyword, text)
+	query.Add(sortType, uploadTime)
 	resp, err := qqbot_utils.Get(AcFunArticleSearchURL, query)
 	if err != nil {
 		return nil, err

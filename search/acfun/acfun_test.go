@@ -2,8 +2,8 @@ package acfun
 
 import "testing"
 
-func TestAcFunSearch(t *testing.T) {
-	acfun := &AcFun{}
+func TestAcFunVideoSearch(t *testing.T) {
+	acfun := &AcFunVideo{}
 	result, err := acfun.Search("ac娘")
 	if err != nil {
 		t.Fatal(err)
