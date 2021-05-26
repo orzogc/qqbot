@@ -9,7 +9,7 @@ import (
 
 var _ Search = (*google.Google)(nil)
 var _ Search = (*duckduckgo.DuckDuckGo)(nil)
-var _ Search = (*acfun.AcFun)(nil)
+var _ Search = (*acfun.AcFunVideo)(nil)
 var _ Search = (*acfun.AcFunArticle)(nil)
 
 // 搜索接口

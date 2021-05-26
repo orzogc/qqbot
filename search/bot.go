@@ -88,7 +88,7 @@ func (b *SearchBot) Init() {
 		instance.config.Commands = map[string][]string{
 			google.GoogleID:         {"google", "谷歌"},
 			duckduckgo.DuckDuckGoID: {"duck"},
-			acfun.AcFunID:           {"ac", "a站", "缺b乐", "缺逼乐", "爱稀饭"},
+			acfun.AcFunVideoID:      {"ac", "a站", "缺b乐", "缺逼乐", "爱稀饭"},
 			acfun.AcFunArticleID:    {"文章"},
 		}
 	}
@@ -102,7 +102,7 @@ func (b *SearchBot) Init() {
 	cmd := map[string]Search{
 		google.GoogleID:         &google.Google{},
 		duckduckgo.DuckDuckGoID: &duckduckgo.DuckDuckGo{},
-		acfun.AcFunID:           &acfun.AcFun{},
+		acfun.AcFunVideoID:      &acfun.AcFunVideo{},
 		acfun.AcFunArticleID:    &acfun.AcFunArticle{},
 	}
 	instance.commands = make(map[string][]Search)
