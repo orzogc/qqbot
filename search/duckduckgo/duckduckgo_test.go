@@ -3,7 +3,7 @@ package duckduckgo
 import "testing"
 
 func TestDuckDuckGoSearch(t *testing.T) {
-	duckduckgo := New()
+	duckduckgo := &DuckDuckGo{}
 	result, err := duckduckgo.Search("abc")
 	if err != nil {
 		t.Fatal(err)

@@ -9,13 +9,11 @@ import (
 	"time"
 )
 
-// http连接超时秒数
-var Timeout uint = 20
-
-// http客户端
-var Client = &http.Client{
-	Timeout: time.Duration(Timeout) * time.Second,
-}
+var (
+	UserAgent      = "Mozilla/5.0 (X11; Linux x86_64; rv:88.0) Gecko/20100101 Firefox/88.0" // 默认User-Agent
+	Timeout   uint = 20                                                                     // http连接超时秒数
+	Client         = &http.Client{Timeout: time.Duration(Timeout) * time.Second}            // http客户端
+)
 
 // 设置http客户端的超时
 func SetTimeout(second uint) {
@@ -39,6 +37,7 @@ func Get(url string, query url.Values) ([]byte, error) {
 		}
 		req.URL.RawQuery = q.Encode()
 	}
+	req.Header.Set("User-Agent", UserAgent)
 
 	resp, err := Client.Do(req)
 	if err != nil {
@@ -64,6 +63,7 @@ func PostJSON(url string, v interface{}) ([]byte, error) {
 		return nil, err
 	}
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("User-Agent", UserAgent)
 
 	resp, err := Client.Do(req)
 	if err != nil {
@@ -85,6 +85,7 @@ func PostForm(url string, form url.Values) ([]byte, error) {
 		return nil, err
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("User-Agent", UserAgent)
 
 	resp, err := Client.Do(req)
 	if err != nil {

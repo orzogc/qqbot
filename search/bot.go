@@ -98,7 +98,7 @@ func (b *SearchBot) Init() {
 
 	cmd := map[string]Search{
 		google.GoogleID:         &google.Google{},
-		duckduckgo.DuckDuckGoID: duckduckgo.New(),
+		duckduckgo.DuckDuckGoID: &duckduckgo.DuckDuckGo{},
 	}
 	instance.commands = make(map[string][]Search)
 	instance.otherCommands = make(map[string]struct{})
