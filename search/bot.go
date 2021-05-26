@@ -13,6 +13,7 @@ import (
 	"github.com/Mrs4s/MiraiGo/client"
 	"github.com/Mrs4s/MiraiGo/message"
 	"github.com/orzogc/qqbot/qqbot_utils"
+	"github.com/orzogc/qqbot/search/acfun"
 	"github.com/orzogc/qqbot/search/duckduckgo"
 	"github.com/orzogc/qqbot/search/google"
 	"github.com/orzogc/qqbot/search/search_utils"
@@ -86,11 +87,13 @@ func (b *SearchBot) Init() {
 	if len(instance.config.Commands) == 0 {
 		instance.config.Commands = map[string][]string{
 			google.GoogleID:         {"google", "谷歌"},
-			duckduckgo.DuckDuckGoID: {"duckduckgo", "duck"},
+			duckduckgo.DuckDuckGoID: {"duck"},
+			acfun.AcFunID:           {"ac", "a站", "缺b乐", "缺逼乐", "爱稀饭"},
+			acfun.AcFunArticleID:    {"文章"},
 		}
 	}
 	if instance.config.Reply.SearchFailed == "" {
-		instance.config.Reply.SearchFailed = "搜索网页失败"
+		instance.config.Reply.SearchFailed = "搜索失败"
 	}
 	if instance.config.Reply.SendResultFailed == "" {
 		instance.config.Reply.SendResultFailed = "发送搜索结果失败"
@@ -99,6 +102,8 @@ func (b *SearchBot) Init() {
 	cmd := map[string]Search{
 		google.GoogleID:         &google.Google{},
 		duckduckgo.DuckDuckGoID: &duckduckgo.DuckDuckGo{},
+		acfun.AcFunID:           &acfun.AcFun{},
+		acfun.AcFunArticleID:    &acfun.AcFunArticle{},
 	}
 	instance.commands = make(map[string][]Search)
 	instance.otherCommands = make(map[string]struct{})
@@ -149,7 +154,7 @@ func onPrivateMessage(qqClient *client.QQClient, msg *message.PrivateMessage) {
 
 	result, err := search(text)
 	if err != nil {
-		logger.WithError(err).WithField("privateMessage", msg.ToString()).Error("搜索网页失败")
+		logger.WithError(err).WithField("privateMessage", msg.ToString()).Error("搜索失败")
 		if errors.Is(err, qqbot_utils.ErrorNoCommand) {
 			//qqbot_utils.SendPrivateText(qqClient, msg.Sender.Uin, "未知命令")
 		} else {
@@ -177,7 +182,7 @@ func onGroupMessage(qqClient *client.QQClient, msg *message.GroupMessage) {
 
 		result, err := search(text)
 		if err != nil {
-			logger.WithError(err).WithField("groupMessage", msg.ToString()).Error("搜索网页失败")
+			logger.WithError(err).WithField("groupMessage", msg.ToString()).Error("搜索失败")
 			if errors.Is(err, qqbot_utils.ErrorNoCommand) {
 				//qqbot_utils.ReplyGroupText(qqClient, msg, "未知命令")
 			} else {
@@ -195,7 +200,7 @@ func onGroupMessage(qqClient *client.QQClient, msg *message.GroupMessage) {
 	}
 }
 
-// 搜索网页
+// 搜索
 func search(text string) (string, error) {
 	logger := logger.WithField("from", "search")
 
@@ -246,7 +251,7 @@ func search(text string) (string, error) {
 			defer wg.Done()
 			r, err := s.Search(keyword)
 			if err != nil {
-				logger.WithError(err).Error("搜索网页失败")
+				logger.WithError(err).Error("搜索失败")
 				mu.Lock()
 				defer mu.Unlock()
 				e = err
@@ -263,7 +268,7 @@ func search(text string) (string, error) {
 		if e != nil {
 			return "", e
 		}
-		return "", fmt.Errorf("搜索网页失败")
+		return "", fmt.Errorf("搜索失败")
 	}
 
 	return search_utils.ConvertToText(result), nil

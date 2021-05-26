@@ -16,6 +16,8 @@ require (
 	github.com/spf13/viper v1.7.1
 	github.com/temoto/robotstxt v1.1.2 // indirect
 	github.com/tidwall/gjson v1.8.0 // indirect
+	github.com/tidwall/pretty v1.1.1 // indirect
+	github.com/valyala/fastjson v1.6.3
 	golang.org/x/net v0.0.0-20210525063256-abc453219eb5 // indirect
 	golang.org/x/sys v0.0.0-20210525143221-35b2ab0089ea // indirect
 	golang.org/x/time v0.0.0-20210220033141-f8bda1e9f3ba // indirect
