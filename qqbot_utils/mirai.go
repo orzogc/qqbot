@@ -1,6 +1,8 @@
 package qqbot_utils
 
 import (
+	"strings"
+
 	"github.com/Mrs4s/MiraiGo/client"
 	"github.com/Mrs4s/MiraiGo/message"
 	"github.com/sirupsen/logrus"
@@ -35,4 +37,50 @@ func ReplyGroupText(qqClient *client.QQClient, msg *message.GroupMessage, text s
 			WithField("text", text).
 			Error("发送群聊消息失败")
 	}
+}
+
+// 获取私聊消息里的文本
+func GetPrivateText(msg *message.PrivateMessage) string {
+	var texts []string
+	for _, element := range msg.Elements {
+		if e, ok := element.(*message.TextElement); ok {
+			texts = append(texts, e.Content)
+		}
+	}
+
+	return strings.Join(texts, " ")
+}
+
+// 获取群聊消息里的文本
+func GetGroupText(msg *message.GroupMessage) string {
+	var texts []string
+	for _, element := range msg.Elements {
+		if e, ok := element.(*message.TextElement); ok {
+			texts = append(texts, e.Content)
+		}
+	}
+
+	return strings.Join(texts, " ")
+}
+
+// 获取群聊消息里@指定qq的文本
+func GetGroupAtText(qq int64, msg *message.GroupMessage) (text string, isAt bool) {
+	var texts []string
+	for _, element := range msg.Elements {
+		switch e := element.(type) {
+		case *message.AtElement:
+			if e.Target == qq {
+				isAt = true
+			}
+		case *message.TextElement:
+			texts = append(texts, e.Content)
+		default:
+		}
+	}
+
+	if isAt {
+		return strings.Join(texts, " "), isAt
+	}
+
+	return "", isAt
 }

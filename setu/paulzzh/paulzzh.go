@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	ID         = "paulzzh"                                // ID
+	PaulzzhID  = "paulzzh"                                // ID
 	PaulzzhURL = "https://img.paulzzh.tech/touhou/random" // paulzzh接口
 	Type       = "type"
 	Site       = "site"

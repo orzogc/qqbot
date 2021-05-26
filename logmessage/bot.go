@@ -1,20 +1,20 @@
 package logmessage
 
 import (
-	"strings"
 	"sync"
 
 	"github.com/Logiase/MiraiGo-Template/bot"
 	"github.com/Logiase/MiraiGo-Template/utils"
 	"github.com/Mrs4s/MiraiGo/client"
 	"github.com/Mrs4s/MiraiGo/message"
+	"github.com/orzogc/qqbot/qqbot_utils"
 )
 
-const LogMessageID = "logmessage"
+const LogMessageID = "logmessage" // ID
 
 var (
-	instance = &LogMessageBot{}
-	logger   = utils.GetModuleLogger(LogMessageID)
+	instance = &LogMessageBot{}                    // 机器人实例
+	logger   = utils.GetModuleLogger(LogMessageID) // 日志记录
 )
 
 // 负责记录消息的bot
@@ -49,13 +49,7 @@ func (b *LogMessageBot) Stop(bot *bot.Bot, wg *sync.WaitGroup) {
 // 处理私聊
 func onPrivateMessage(qqClient *client.QQClient, msg *message.PrivateMessage) {
 	logger := logger.WithField("from", "onPrivateMessage")
-	var texts []string
-	for _, element := range msg.Elements {
-		if e, ok := element.(*message.TextElement); ok {
-			texts = append(texts, e.Content)
-		}
-	}
-	text := strings.Join(texts, " ")
+	text := qqbot_utils.GetPrivateText(msg)
 	logger.WithField("senderQQ", msg.Sender.Uin).
 		WithField("text", text).
 		Infof("接收私聊消息：%s", msg.ToString())
@@ -64,23 +58,7 @@ func onPrivateMessage(qqClient *client.QQClient, msg *message.PrivateMessage) {
 // 处理群聊
 func onGroupMessage(qqClient *client.QQClient, msg *message.GroupMessage) {
 	logger := logger.WithField("from", "onGroupMessage")
-
-	var isAt bool
-	var texts []string
-	for _, element := range msg.Elements {
-		switch e := element.(type) {
-		case *message.AtElement:
-			if e.Target == qqClient.Uin {
-				isAt = true
-			}
-		case *message.TextElement:
-			texts = append(texts, e.Content)
-		default:
-		}
-	}
-
-	if isAt {
-		text := strings.Join(texts, " ")
+	if text, isAt := qqbot_utils.GetGroupAtText(qqClient.Uin, msg); isAt {
 		logger.WithField("qqGroup", msg.GroupCode).
 			WithField("senderQQ", msg.Sender.Uin).
 			WithField("text", text).

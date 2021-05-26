@@ -115,13 +115,7 @@ func replace2(s string) string {
 func onPrivateMessage(qqClient *client.QQClient, msg *message.PrivateMessage) {
 	logger := logger.WithField("from", "onPrivateMessage")
 
-	var texts []string
-	for _, element := range msg.Elements {
-		if e, ok := element.(*message.TextElement); ok {
-			texts = append(texts, e.Content)
-		}
-	}
-	text := strings.Join(texts, " ")
+	text := qqbot_utils.GetPrivateText(msg)
 	if strings.Contains(text, "#") {
 		return
 	}
@@ -141,22 +135,7 @@ func onPrivateMessage(qqClient *client.QQClient, msg *message.PrivateMessage) {
 func onGroupMessage(qqClient *client.QQClient, msg *message.GroupMessage) {
 	logger := logger.WithField("from", "onGroupMessage")
 
-	var isAt bool
-	var texts []string
-	for _, element := range msg.Elements {
-		switch e := element.(type) {
-		case *message.AtElement:
-			if e.Target == qqClient.Uin {
-				isAt = true
-			}
-		case *message.TextElement:
-			texts = append(texts, e.Content)
-		default:
-		}
-	}
-
-	if isAt {
-		text := strings.Join(texts, " ")
+	if text, isAt := qqbot_utils.GetGroupAtText(qqClient.Uin, msg); isAt {
 		if strings.Contains(text, "#") {
 			return
 		}

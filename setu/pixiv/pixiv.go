@@ -16,8 +16,7 @@ import (
 	"github.com/orzogc/qqbot/setu/setu_utils"
 )
 
-// ID
-const ID = "pixiv"
+const PixivID = "pixiv" // ID
 
 var (
 	ErrorNoTag        = errors.New("pixiv图片搜索没有关键字")

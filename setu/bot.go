@@ -25,9 +25,8 @@ import (
 const SetuID = "setu"
 
 var (
-	instance       = &SetuBot{}                    // 机器人实例
-	logger         = utils.GetModuleLogger(SetuID) // 日志记录
-	errorNoCommand = errors.New("没有发现有效的命令")
+	instance = &SetuBot{}                    // 机器人实例
+	logger   = utils.GetModuleLogger(SetuID) // 日志记录
 )
 
 // 回复配置
@@ -60,9 +59,10 @@ type Config struct {
 
 // 图片机器人
 type SetuBot struct {
-	config   *Config
-	pixiv    *pixiv.Pixiv
-	commands map[string][]Setu
+	config        *Config
+	pixiv         *pixiv.Pixiv
+	commands      map[string][]Setu
+	otherCommands map[string]struct{}
 }
 
 // 初始化
@@ -105,11 +105,11 @@ func (b *SetuBot) Init() {
 
 	if len(instance.config.Commands) == 0 {
 		instance.config.Commands = map[string][]string{
-			lolicon.ID:              {"色图", "涩图", "瑟图", "setu"},
+			lolicon.LoliconID:       {"色图", "涩图", "瑟图", "setu"},
 			islandwind233.AnimeID:   {"二次元", "二刺猿", "erciyuan"},
 			islandwind233.CosplayID: {"cos", "余弦", "三次元"},
-			paulzzh.ID:              {"东方", "车万", "東方", "越共", "dongfang", "touhou"},
-			pixiv.ID:                {"pixiv", "p站", "P站"},
+			paulzzh.PaulzzhID:       {"东方", "车万", "東方", "越共", "dongfang", "touhou"},
+			pixiv.PixivID:           {"pixiv", "p站", "P站"},
 		}
 	}
 	if instance.config.Reply.Normal == "" {
@@ -144,13 +144,14 @@ func (b *SetuBot) Init() {
 	instance.pixiv.SearchOption = &instance.config.Pixiv.SearchOption
 
 	cmd := map[string]Setu{
-		lolicon.ID:              &instance.config.Lolicon,
+		lolicon.LoliconID:       &instance.config.Lolicon,
 		islandwind233.AnimeID:   &islandwind233.Anime{},
 		islandwind233.CosplayID: &islandwind233.Cosplay{},
-		paulzzh.ID:              &instance.config.Paulzzh,
-		pixiv.ID:                instance.pixiv,
+		paulzzh.PaulzzhID:       &instance.config.Paulzzh,
+		pixiv.PixivID:           instance.pixiv,
 	}
 	instance.commands = make(map[string][]Setu)
+	instance.otherCommands = make(map[string]struct{})
 	for k, v := range instance.config.Commands {
 		setu, ok := cmd[k]
 		if !ok {
@@ -164,11 +165,18 @@ func (b *SetuBot) Init() {
 			} else {
 				instance.commands[s] = []Setu{setu}
 			}
+			qqbot_utils.AllCommands[s] = struct{}{}
 		}
 	}
 }
 
-func (b *SetuBot) PostInit() {}
+func (b *SetuBot) PostInit() {
+	for c := range qqbot_utils.AllCommands {
+		if _, ok := instance.commands[c]; !ok {
+			instance.otherCommands[c] = struct{}{}
+		}
+	}
+}
 
 func (b *SetuBot) Serve(bot *bot.Bot) {
 	registerBot(bot)
@@ -184,22 +192,15 @@ func (b *SetuBot) Stop(bot *bot.Bot, wg *sync.WaitGroup) {
 func onPrivateMessage(qqClient *client.QQClient, msg *message.PrivateMessage) {
 	logger := logger.WithField("from", "onPrivateMessage")
 
-	var texts []string
-	for _, element := range msg.Elements {
-		if e, ok := element.(*message.TextElement); ok {
-			texts = append(texts, e.Content)
-		}
-	}
-	text := strings.Join(texts, " ")
+	text := qqbot_utils.GetPrivateText(msg)
 	if !strings.Contains(text, "#") {
 		return
 	}
-	texts = strings.Fields(text)
 
-	images, err := getImage(texts)
+	images, err := getImage(text)
 	if err != nil {
 		logger.WithError(err).WithField("privateMessage", msg.ToString()).Error("获取图片失败")
-		if errors.Is(err, errorNoCommand) {
+		if errors.Is(err, qqbot_utils.ErrorNoCommand) {
 			qqbot_utils.SendPrivateText(qqClient, msg.Sender.Uin, instance.config.Reply.NoCommand)
 		} else if errors.Is(err, lolicon.ErrorKeywordNotFound) || errors.Is(err, pixiv.ErrorSearchFailed) {
 			qqbot_utils.SendPrivateText(qqClient, msg.Sender.Uin, instance.config.Reply.KeywordNotFound)
@@ -216,7 +217,9 @@ func onPrivateMessage(qqClient *client.QQClient, msg *message.PrivateMessage) {
 			return
 		}
 	}
-	sendPrivateImage(qqClient, msg.Sender.Uin, images)
+	if len(images) != 0 {
+		sendPrivateImage(qqClient, msg.Sender.Uin, images)
+	}
 }
 
 // 发送私聊图片
@@ -252,30 +255,15 @@ func sendPrivateImage(qqClient *client.QQClient, qq int64, images [][]byte) {
 func onGroupMessage(qqClient *client.QQClient, msg *message.GroupMessage) {
 	logger := logger.WithField("from", "onGroupMessage")
 
-	var isAt bool
-	var texts []string
-	for _, element := range msg.Elements {
-		switch e := element.(type) {
-		case *message.AtElement:
-			if e.Target == qqClient.Uin {
-				isAt = true
-			}
-		case *message.TextElement:
-			texts = append(texts, e.Content)
-		default:
-		}
-	}
-
-	if isAt {
-		text := strings.Join(texts, " ")
+	if text, isAt := qqbot_utils.GetGroupAtText(qqClient.Uin, msg); isAt {
 		if !strings.Contains(text, "#") {
 			return
 		}
-		texts = strings.Fields(text)
-		images, err := getImage(texts)
+
+		images, err := getImage(text)
 		if err != nil {
 			logger.WithError(err).WithField("groupMessage", msg.ToString()).Error("获取图片失败")
-			if errors.Is(err, errorNoCommand) {
+			if errors.Is(err, qqbot_utils.ErrorNoCommand) {
 				qqbot_utils.ReplyGroupText(qqClient, msg, instance.config.Reply.NoCommand)
 			} else if errors.Is(err, lolicon.ErrorKeywordNotFound) || errors.Is(err, pixiv.ErrorSearchFailed) {
 				qqbot_utils.ReplyGroupText(qqClient, msg, instance.config.Reply.KeywordNotFound)
@@ -292,7 +280,9 @@ func onGroupMessage(qqClient *client.QQClient, msg *message.GroupMessage) {
 				return
 			}
 		}
-		sendGroupImage(qqClient, msg, images)
+		if len(images) != 0 {
+			sendGroupImage(qqClient, msg, images)
+		}
 	}
 }
 
@@ -335,10 +325,12 @@ func sendGroupImage(qqClient *client.QQClient, msg *message.GroupMessage, images
 }
 
 // 获取图片
-func getImage(texts []string) ([][]byte, error) {
+func getImage(text string) ([][]byte, error) {
 	logger := logger.WithField("from", "getImage")
 
+	texts := strings.Fields(text)
 	var hasCommand bool
+	var hasOtherCommand bool
 	keywords := make([]string, 0, len(texts))
 	cmd := make(map[Setu]struct{})
 	for _, t := range texts {
@@ -353,13 +345,22 @@ func getImage(texts []string) ([][]byte, error) {
 					}
 				}
 			}
+			for k := range instance.otherCommands {
+				if strings.Contains(t, k) {
+					hasOtherCommand = true
+					isCommand = true
+				}
+			}
 		}
 		if !isCommand {
 			keywords = append(keywords, t)
 		}
 	}
-	if !hasCommand {
-		return nil, errorNoCommand
+	if !hasCommand && hasOtherCommand {
+		return nil, nil
+	}
+	if !hasCommand && !hasOtherCommand {
+		return nil, qqbot_utils.ErrorNoCommand
 	}
 	keyword := strings.Join(keywords, " ")
 

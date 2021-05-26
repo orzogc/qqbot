@@ -10,13 +10,13 @@ import (
 )
 
 const (
-	ReconnectID = "reconnect" // ID
-	waitTime    = 10 * time.Second
+	ReconnectID = "reconnect"      // ID
+	waitTime    = 10 * time.Second // 重连前的等待时间
 )
 
 var (
-	instance = &ReconnectBot{}
-	logger   = utils.GetModuleLogger(ReconnectID)
+	instance = &ReconnectBot{}                    // 机器人实例
+	logger   = utils.GetModuleLogger(ReconnectID) // 日志记录
 )
 
 // 负责重连帐号的bot
@@ -48,6 +48,7 @@ func (b *ReconnectBot) Stop(bot *bot.Bot, wg *sync.WaitGroup) {
 	defer wg.Done()
 }
 
+// 处理失去连接
 func onDisconnected(qqClient *client.QQClient, event *client.ClientDisconnectedEvent) {
 	logger := logger.WithField("from", "onDisconnected")
 	logger.WithField("reason", event.Message).Warn("bot已离线，尝试重连")

@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	ID         = "lolicon"                      // ID
+	LoliconID  = "lolicon"                      // ID
 	LoliconURL = "https://api.lolicon.app/setu" // lolicon接口
 	apikey     = "apikey"
 	r18        = "r18"

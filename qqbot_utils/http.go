@@ -9,6 +9,9 @@ import (
 	"time"
 )
 
+// http连接超时秒数
+var Timeout uint
+
 // http客户端
 var Client = &http.Client{
 	Timeout: 20 * time.Second,
