@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-func TestGetImage302(t *testing.T) {
+func TestPaulzzhGetImage302(t *testing.T) {
 	p := Paulzzh{
 		Size:  "wap",
 		Proxy: 1,
@@ -18,7 +18,7 @@ func TestGetImage302(t *testing.T) {
 	}
 }
 
-func TestGetImageJSON(t *testing.T) {
+func TestPaulzzhGetImageJSON(t *testing.T) {
 	p := Paulzzh{
 		Type:  "json",
 		Site:  "yandere",

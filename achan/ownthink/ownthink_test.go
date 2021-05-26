@@ -2,7 +2,7 @@ package ownthink
 
 import "testing"
 
-func TestChat(t *testing.T) {
+func TestOwnthinkChat(t *testing.T) {
 	o := &Ownthink{}
 	reply, err := o.ChatWith("你好", "")
 	if err != nil {

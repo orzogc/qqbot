@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-func TestAnime(t *testing.T) {
+func TestAnimeGetImage(t *testing.T) {
 	a := &Anime{}
 	img, err := a.GetImage("")
 	if err != nil {
@@ -15,7 +15,7 @@ func TestAnime(t *testing.T) {
 	}
 }
 
-func TestCosplay(t *testing.T) {
+func TestCosplayGetImage(t *testing.T) {
 	c := &Cosplay{}
 	img, err := c.GetImage("")
 	if err != nil {

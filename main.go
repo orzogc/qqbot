@@ -43,9 +43,9 @@ func loadConfig() {
 		logger.WithError(err).Panic("读取设置文件qqbot.json失败")
 	}
 
-	qqbot_utils.Timeout = config.GlobalConfig.GetUint("timeout")
-	if qqbot_utils.Timeout == 0 {
-		qqbot_utils.Timeout = 20
+	timeout := config.GlobalConfig.GetUint("timeout")
+	if timeout != 0 {
+		qqbot_utils.Timeout = timeout
 	}
 	qqbot_utils.SetTimeout(qqbot_utils.Timeout)
 }

@@ -16,7 +16,7 @@ func TestLolicon(t *testing.T) {
 	}
 }
 
-func TestGetImage(t *testing.T) {
+func TestLoliconGetImage(t *testing.T) {
 	l := &Lolicon{
 		Proxy: "disable",
 	}

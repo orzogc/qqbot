@@ -2,7 +2,7 @@ package tian
 
 import "testing"
 
-func TestChat(t *testing.T) {
+func TestTianChat(t *testing.T) {
 	q := Tian{
 		Key: "key",
 	}

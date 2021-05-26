@@ -10,11 +10,11 @@ import (
 )
 
 // http连接超时秒数
-var Timeout uint
+var Timeout uint = 20
 
 // http客户端
 var Client = &http.Client{
-	Timeout: 20 * time.Second,
+	Timeout: time.Duration(Timeout) * time.Second,
 }
 
 // 设置http客户端的超时

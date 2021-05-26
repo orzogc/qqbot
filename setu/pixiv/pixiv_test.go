@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-func TestPixiv(t *testing.T) {
+func TestPixivGetImage(t *testing.T) {
 	p := New("")
 	img, err := p.GetImage("acfun")
 	if err != nil {
