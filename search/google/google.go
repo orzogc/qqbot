@@ -9,7 +9,7 @@ import (
 	googlesearch "github.com/rocketlaunchr/google-search"
 )
 
-const GoogleID = "google"
+const GoogleID = "google" // ID
 
 // google搜索
 type Google struct{}
@@ -26,9 +26,8 @@ func (g *Google) Search(text string) ([]search_utils.SearchResult, error) {
 	sr := make([]search_utils.SearchResult, 0, len(result))
 	for _, r := range result {
 		sr = append(sr, search_utils.SearchResult{
-			URL:         r.URL,
-			Title:       r.Title,
-			Description: r.Description,
+			URL:   r.URL,
+			Title: r.Title,
 		})
 	}
 

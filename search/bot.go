@@ -13,6 +13,7 @@ import (
 	"github.com/Mrs4s/MiraiGo/client"
 	"github.com/Mrs4s/MiraiGo/message"
 	"github.com/orzogc/qqbot/qqbot_utils"
+	"github.com/orzogc/qqbot/search/duckduckgo"
 	"github.com/orzogc/qqbot/search/google"
 	"github.com/orzogc/qqbot/search/search_utils"
 	"github.com/spf13/viper"
@@ -84,7 +85,8 @@ func (b *SearchBot) Init() {
 
 	if len(instance.config.Commands) == 0 {
 		instance.config.Commands = map[string][]string{
-			google.GoogleID: {"google"},
+			google.GoogleID:         {"google", "谷歌"},
+			duckduckgo.DuckDuckGoID: {"duckduckgo", "duck"},
 		}
 	}
 	if instance.config.Reply.SearchFailed == "" {
@@ -95,7 +97,8 @@ func (b *SearchBot) Init() {
 	}
 
 	cmd := map[string]Search{
-		google.GoogleID: &google.Google{},
+		google.GoogleID:         &google.Google{},
+		duckduckgo.DuckDuckGoID: duckduckgo.New(),
 	}
 	instance.commands = make(map[string][]Search)
 	instance.otherCommands = make(map[string]struct{})
@@ -202,10 +205,11 @@ func search(text string) (string, error) {
 	keywords := make([]string, 0, len(texts))
 	cmd := make(map[Search]struct{})
 	for _, t := range texts {
+		s := strings.ToLower(t)
 		var isCommand bool
 		if strings.Contains(t, "#") {
 			for k, v := range instance.commands {
-				if strings.Contains(t, k) {
+				if strings.Contains(s, k) {
 					hasCommand = true
 					isCommand = true
 					for _, c := range v {
@@ -214,7 +218,7 @@ func search(text string) (string, error) {
 				}
 			}
 			for k := range instance.otherCommands {
-				if strings.Contains(t, k) {
+				if strings.Contains(s, k) {
 					hasOtherCommand = true
 					isCommand = true
 				}

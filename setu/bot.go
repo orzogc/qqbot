@@ -109,7 +109,7 @@ func (b *SetuBot) Init() {
 			islandwind233.AnimeID:   {"二次元", "二刺猿", "erciyuan"},
 			islandwind233.CosplayID: {"cos", "余弦", "三次元"},
 			paulzzh.PaulzzhID:       {"东方", "车万", "東方", "越共", "dongfang", "touhou"},
-			pixiv.PixivID:           {"pixiv", "p站", "P站"},
+			pixiv.PixivID:           {"pixiv", "p站"},
 		}
 	}
 	if instance.config.Reply.Normal == "" {
@@ -334,10 +334,11 @@ func getImage(text string) ([][]byte, error) {
 	keywords := make([]string, 0, len(texts))
 	cmd := make(map[Setu]struct{})
 	for _, t := range texts {
+		s := strings.ToLower(t)
 		var isCommand bool
 		if strings.Contains(t, "#") {
 			for k, v := range instance.commands {
-				if strings.Contains(t, k) {
+				if strings.Contains(s, k) {
 					hasCommand = true
 					isCommand = true
 					for _, c := range v {
@@ -346,7 +347,7 @@ func getImage(text string) ([][]byte, error) {
 				}
 			}
 			for k := range instance.otherCommands {
-				if strings.Contains(t, k) {
+				if strings.Contains(s, k) {
 					hasOtherCommand = true
 					isCommand = true
 				}

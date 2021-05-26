@@ -11,6 +11,7 @@ require (
 	github.com/gocolly/colly/v2 v2.1.0 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/rocketlaunchr/google-search v1.1.2
+	github.com/sap-nocops/duckduckgogo v0.0.0-20201102135645-176990152850
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/viper v1.7.1
 	github.com/temoto/robotstxt v1.1.2 // indirect
