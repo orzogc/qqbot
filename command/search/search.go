@@ -2,6 +2,7 @@ package search
 
 import (
 	"fmt"
+	"strings"
 	"sync"
 
 	"github.com/Logiase/MiraiGo-Template/utils"
@@ -9,6 +10,7 @@ import (
 	"github.com/Mrs4s/MiraiGo/message"
 	"github.com/orzogc/qqbot/command/search/acfun"
 	"github.com/orzogc/qqbot/command/search/duckduckgo"
+	"github.com/orzogc/qqbot/command/search/ehentai"
 	"github.com/orzogc/qqbot/command/search/google"
 	"github.com/orzogc/qqbot/command/search/search_utils"
 	"github.com/orzogc/qqbot/qqbot_utils"
@@ -22,6 +24,7 @@ var _ Search = (*google.Google)(nil)
 var _ Search = (*duckduckgo.DuckDuckGo)(nil)
 var _ Search = (*acfun.AcFunVideo)(nil)
 var _ Search = (*acfun.AcFunArticle)(nil)
+var _ Search = (*ehentai.EHentai)(nil)
 
 // 搜索接口
 type Search interface {
@@ -49,6 +52,7 @@ func (c *Config) SetConfig() {
 			duckduckgo.DuckDuckGoID: {"duck"},
 			acfun.AcFunVideoID:      {"ac", "a站", "缺b乐", "缺逼乐", "爱稀饭"},
 			acfun.AcFunArticleID:    {"文章"},
+			ehentai.EHentaiID:       {"eh"},
 		}
 	}
 	if c.Reply.SearchFailed == "" {
@@ -100,6 +104,10 @@ func (c *Config) HandleGroupMessage(qqClient *client.QQClient, msg *message.Grou
 // 搜索
 func search(cmd map[Search]struct{}, keyword string) (string, error) {
 	logger := logger.WithField("from", "search")
+
+	if strings.TrimSpace(keyword) == "" {
+		return "", fmt.Errorf("搜索关键字为空")
+	}
 
 	var result []search_utils.SearchResult
 	var e error

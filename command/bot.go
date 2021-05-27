@@ -16,6 +16,7 @@ import (
 	"github.com/orzogc/qqbot/command/search"
 	"github.com/orzogc/qqbot/command/search/acfun"
 	"github.com/orzogc/qqbot/command/search/duckduckgo"
+	"github.com/orzogc/qqbot/command/search/ehentai"
 	"github.com/orzogc/qqbot/command/search/google"
 	"github.com/orzogc/qqbot/command/setu"
 	"github.com/orzogc/qqbot/command/setu/islandwind233"
@@ -111,6 +112,7 @@ func (b *CommandBot) Init() {
 		duckduckgo.DuckDuckGoID: &duckduckgo.DuckDuckGo{},
 		acfun.AcFunVideoID:      &acfun.AcFunVideo{},
 		acfun.AcFunArticleID:    &acfun.AcFunArticle{},
+		ehentai.EHentaiID:       &ehentai.EHentai{},
 	}
 	momentCmd := map[string]moment.Moment{
 		square.AcFunSquareID: &square.AcFunSquare{},
