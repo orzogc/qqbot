@@ -119,8 +119,7 @@ func (c *Config) sendPrivateImage(qqClient *client.QQClient, msg *message.Privat
 	num := 0
 	for _, img := range images {
 		if len(img) != 0 {
-			r := bytes.NewReader(img)
-			element, err := qqClient.UploadPrivateImage(msg.Sender.Uin, r)
+			element, err := qqClient.UploadPrivateImage(msg.Sender.Uin, bytes.NewReader(img))
 			if err != nil {
 				logger.WithError(err).WithField("receiverQQ", msg.Sender.Uin).Error("上传私聊图片失败")
 				continue
@@ -150,8 +149,7 @@ func (c *Config) sendGroupImage(qqClient *client.QQClient, msg *message.GroupMes
 	num := 0
 	for _, img := range images {
 		if len(img) != 0 {
-			r := bytes.NewReader(img)
-			element, err := qqClient.UploadGroupImage(msg.GroupCode, r)
+			element, err := qqClient.UploadGroupImage(msg.GroupCode, bytes.NewReader(img))
 			if err != nil {
 				logger.WithError(err).
 					WithField("qqGroup", msg.GroupCode).

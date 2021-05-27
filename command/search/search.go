@@ -31,8 +31,8 @@ type Search interface {
 
 // 回复配置
 type Reply struct {
-	SearchFailed     string `json:"searchFailed"`
-	SendResultFailed string `json:"sendResultFailed"`
+	SearchFailed     string `json:"searchFailed"`     // 搜索失败的回复
+	SendResultFailed string `json:"sendResultFailed"` // 发送搜索结果失败的回复
 }
 
 // 配置

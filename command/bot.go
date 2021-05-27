@@ -11,6 +11,8 @@ import (
 	"github.com/Logiase/MiraiGo-Template/utils"
 	"github.com/Mrs4s/MiraiGo/client"
 	"github.com/Mrs4s/MiraiGo/message"
+	"github.com/orzogc/qqbot/command/moment"
+	"github.com/orzogc/qqbot/command/moment/square"
 	"github.com/orzogc/qqbot/command/search"
 	"github.com/orzogc/qqbot/command/search/acfun"
 	"github.com/orzogc/qqbot/command/search/duckduckgo"
@@ -40,6 +42,7 @@ type Reply struct {
 type Config struct {
 	Setu   setu.Config   `json:"setu"`   // 图片机器人配置
 	Search search.Config `json:"search"` // 搜索机器人配置
+	Moment moment.Config `json:"moment"` // 动态机器人配置
 	Reply  Reply         `json:"reply"`  // 回复配置
 }
 
@@ -90,6 +93,7 @@ func (b *CommandBot) Init() {
 
 	instance.config.Setu.SetConfig()
 	instance.config.Search.SetConfig()
+	instance.config.Moment.SetConfig()
 	if instance.config.Reply.NoCommand == "" {
 		instance.config.Reply.NoCommand = "未知命令"
 	}
@@ -107,6 +111,9 @@ func (b *CommandBot) Init() {
 		duckduckgo.DuckDuckGoID: &duckduckgo.DuckDuckGo{},
 		acfun.AcFunVideoID:      &acfun.AcFunVideo{},
 		acfun.AcFunArticleID:    &acfun.AcFunArticle{},
+	}
+	momentCmd := map[string]moment.Moment{
+		square.AcFunSquareID: &square.AcFunSquare{},
 	}
 	instance.commands = make(map[string][]interface{})
 	for k, v := range instance.config.Setu.Commands {
@@ -128,6 +135,21 @@ func (b *CommandBot) Init() {
 		command, ok := searchCmd[k]
 		if !ok {
 			logger.Warnf("未知的搜索机器人命令ID：%s", k)
+			continue
+		}
+		for _, s := range v {
+			if c, ok := instance.commands[s]; ok {
+				c = append(c, command)
+				instance.commands[s] = c
+			} else {
+				instance.commands[s] = []interface{}{command}
+			}
+		}
+	}
+	for k, v := range instance.config.Moment.Commands {
+		command, ok := momentCmd[k]
+		if !ok {
+			logger.Warnf("未知的动态机器人命令ID：%s", k)
 			continue
 		}
 		for _, s := range v {
@@ -170,14 +192,17 @@ func onPrivateMessage(qqClient *client.QQClient, msg *message.PrivateMessage) {
 		return
 	}
 
-	setuCmd := make(map[setu.Setu]struct{}, len(cmd))
-	searchCmd := make(map[search.Search]struct{}, len(cmd))
+	setuCmd := make(map[setu.Setu]struct{})
+	searchCmd := make(map[search.Search]struct{})
+	momentCmd := make(map[moment.Moment]struct{})
 	for c := range cmd {
 		switch c := c.(type) {
 		case setu.Setu:
 			setuCmd[c] = struct{}{}
 		case search.Search:
 			searchCmd[c] = struct{}{}
+		case moment.Moment:
+			momentCmd[c] = struct{}{}
 		default:
 			logger.Warn("未知的机器人命令类型")
 		}
@@ -188,6 +213,9 @@ func onPrivateMessage(qqClient *client.QQClient, msg *message.PrivateMessage) {
 	}
 	if len(searchCmd) != 0 {
 		instance.config.Search.HandlePrivateMessage(qqClient, msg, searchCmd, keyword)
+	}
+	if len(momentCmd) != 0 {
+		instance.config.Moment.HandlePrivateMessage(qqClient, msg, momentCmd, keyword)
 	}
 }
 
@@ -208,14 +236,17 @@ func onGroupMessage(qqClient *client.QQClient, msg *message.GroupMessage) {
 			return
 		}
 
-		setuCmd := make(map[setu.Setu]struct{}, len(cmd))
-		searchCmd := make(map[search.Search]struct{}, len(cmd))
+		setuCmd := make(map[setu.Setu]struct{})
+		searchCmd := make(map[search.Search]struct{})
+		momentCmd := make(map[moment.Moment]struct{})
 		for c := range cmd {
 			switch c := c.(type) {
 			case setu.Setu:
 				setuCmd[c] = struct{}{}
 			case search.Search:
 				searchCmd[c] = struct{}{}
+			case moment.Moment:
+				momentCmd[c] = struct{}{}
 			default:
 				logger.Warn("未知的机器人命令类型")
 			}
@@ -226,6 +257,9 @@ func onGroupMessage(qqClient *client.QQClient, msg *message.GroupMessage) {
 		}
 		if len(searchCmd) != 0 {
 			instance.config.Search.HandleGroupMessage(qqClient, msg, searchCmd, keyword)
+		}
+		if len(momentCmd) != 0 {
+			instance.config.Moment.HandleGroupMessage(qqClient, msg, momentCmd, keyword)
 		}
 	}
 }
