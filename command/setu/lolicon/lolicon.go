@@ -10,8 +10,8 @@ import (
 	"strconv"
 	"sync"
 
+	"github.com/orzogc/qqbot/command/setu/setu_utils"
 	"github.com/orzogc/qqbot/qqbot_utils"
-	"github.com/orzogc/qqbot/setu/setu_utils"
 )
 
 const (

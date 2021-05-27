@@ -128,7 +128,7 @@ func onPrivateMessage(qqClient *client.QQClient, msg *message.PrivateMessage) {
 	reply = replace(reply)
 	reply = replace2(reply)
 
-	qqbot_utils.SendPrivateText(qqClient, msg.Sender.Uin, reply)
+	qqbot_utils.SendPrivateText(qqClient, msg, reply)
 }
 
 // 处理群聊

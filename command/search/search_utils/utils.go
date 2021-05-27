@@ -6,7 +6,7 @@ type SearchResult struct {
 	Title string `json:"title"` // 搜索结果的标题
 }
 
-func ConvertToText(result []SearchResult) (text string) {
+func ToString(result []SearchResult) (text string) {
 	for _, r := range result {
 		text += r.URL + "\n" + r.Title + "\n"
 	}

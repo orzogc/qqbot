@@ -13,11 +13,10 @@ import (
 	"github.com/spf13/viper"
 
 	_ "github.com/orzogc/qqbot/achan"
+	_ "github.com/orzogc/qqbot/command"
 	_ "github.com/orzogc/qqbot/logmessage"
 	"github.com/orzogc/qqbot/qqbot_utils"
 	_ "github.com/orzogc/qqbot/reconnect"
-	_ "github.com/orzogc/qqbot/search"
-	_ "github.com/orzogc/qqbot/setu"
 )
 
 // 读取配置

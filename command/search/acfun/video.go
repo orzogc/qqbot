@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"net/url"
 
+	"github.com/orzogc/qqbot/command/search/search_utils"
 	"github.com/orzogc/qqbot/qqbot_utils"
-	"github.com/orzogc/qqbot/search/search_utils"
 	"github.com/valyala/fastjson"
 )
 
 const (
-	AcFunVideoID        = "acfun"                                              // ID
+	AcFunVideoID        = "acfunVideo"                                         // ID
 	AcFunVideoSearchURL = "https://api-new.app.acfun.cn/rest/app/search/video" // AcFun视频搜索API
 	acfunVedioPage      = "https://www.acfun.cn/v/ac%d"                        // AcFun视频页面
 	keyword             = "keyword"
@@ -21,6 +21,7 @@ const (
 // AcFun视频搜索
 type AcFunVideo struct{}
 
+// 搜索text，实现Search接口
 func (a *AcFunVideo) Search(text string) ([]search_utils.SearchResult, error) {
 	query := url.Values{}
 	query.Add(keyword, text)

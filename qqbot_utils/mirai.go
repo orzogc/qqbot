@@ -11,13 +11,13 @@ import (
 var logger = logrus.New()
 
 // 发送私聊文字
-func SendPrivateText(qqClient *client.QQClient, qq int64, text string) bool {
+func SendPrivateText(qqClient *client.QQClient, msg *message.PrivateMessage, text string) bool {
 	logger := logger.WithField("from", "SendPrivateText")
 	reply := message.NewSendingMessage()
 	reply.Append(message.NewText(text))
-	logger.WithField("receiverQQ", qq).WithField("text", text).Info("发送私聊消息")
-	if result := qqClient.SendPrivateMessage(qq, reply); result == nil || result.Id <= 0 {
-		logger.WithField("receiverQQ", qq).WithField("text", text).Error("发送私聊消息失败")
+	logger.WithField("receiverQQ", msg.Sender.Uin).WithField("text", text).Info("发送私聊消息")
+	if result := qqClient.SendPrivateMessage(msg.Sender.Uin, reply); result == nil || result.Id <= 0 {
+		logger.WithField("receiverQQ", msg.Sender.Uin).WithField("text", text).Error("发送私聊消息失败")
 		return false
 	}
 

@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"net/url"
 
+	"github.com/orzogc/qqbot/command/search/search_utils"
 	"github.com/orzogc/qqbot/qqbot_utils"
-	"github.com/orzogc/qqbot/search/search_utils"
 	"github.com/valyala/fastjson"
 )
 
@@ -18,6 +18,7 @@ const (
 // AcFun文章搜索
 type AcFunArticle struct{}
 
+// 搜索text，实现Search接口
 func (a *AcFunArticle) Search(text string) ([]search_utils.SearchResult, error) {
 	query := url.Values{}
 	query.Add(keyword, text)

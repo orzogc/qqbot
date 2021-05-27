@@ -5,8 +5,8 @@ import (
 	"net/url"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/orzogc/qqbot/command/search/search_utils"
 	"github.com/orzogc/qqbot/qqbot_utils"
-	"github.com/orzogc/qqbot/search/search_utils"
 )
 
 const (

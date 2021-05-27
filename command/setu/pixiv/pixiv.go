@@ -12,8 +12,8 @@ import (
 
 	"github.com/NateScarlet/pixiv/pkg/artwork"
 	"github.com/NateScarlet/pixiv/pkg/client"
+	"github.com/orzogc/qqbot/command/setu/setu_utils"
 	"github.com/orzogc/qqbot/qqbot_utils"
-	"github.com/orzogc/qqbot/setu/setu_utils"
 )
 
 const PixivID = "pixiv" // ID
