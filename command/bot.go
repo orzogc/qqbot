@@ -49,9 +49,11 @@ type Config struct {
 
 // 处理命令的机器人
 type CommandBot struct {
-	config   *Config                  // 配置
-	commands map[string][]interface{} // 命令
-	setubot  *setu.SetuBot            // 图片机器人
+	config    *Config                  // 配置
+	commands  map[string][]interface{} // 命令
+	setuBot   *setu.SetuBot            // 图片机器人
+	searchBot *search.SearchBot        // 搜索机器人
+	momentBot *moment.MomentBot        // 动态机器人
 }
 
 // 初始化
@@ -82,30 +84,32 @@ func (b *CommandBot) Init() {
 
 	err = viper.ReadInConfig()
 	if err != nil {
-		logger.WithError(err).Warn("读取设置文件setu.json失败，使用默认设置")
+		logger.WithError(err).Warn("读取设置文件command.json失败，使用默认设置")
 		instance.config = new(Config)
 	} else {
 		err = viper.Unmarshal(&instance.config)
 		if err != nil {
-			logger.WithError(err).Warn("设置文件setu.json的内容无效，使用默认设置")
+			logger.WithError(err).Warn("设置文件command.json的内容无效，使用默认设置")
 			instance.config = new(Config)
 		}
 	}
 
-	instance.config.Setu.SetConfig()
-	instance.config.Search.SetConfig()
-	instance.config.Moment.SetConfig()
 	if instance.config.Reply.NoCommand == "" {
 		instance.config.Reply.NoCommand = "未知命令"
 	}
-	instance.setubot = setu.NewSetuBot(instance.config.Setu.Pixiv.PHPSESSID)
+	instance.setuBot = setu.NewSetuBot(&instance.config.Setu)
+	instance.searchBot = search.NewSearchBot(&instance.config.Search)
+	instance.momentBot = moment.NewMomentBot(&instance.config.Moment)
+	instance.setuBot.SetConfig()
+	instance.searchBot.SetConfig()
+	instance.momentBot.SetConfig()
 
 	setuCmd := map[string]setu.Setu{
 		lolicon.LoliconID:       &instance.config.Setu.Lolicon,
 		islandwind233.AnimeID:   &islandwind233.Anime{},
 		islandwind233.CosplayID: &islandwind233.Cosplay{},
 		paulzzh.PaulzzhID:       &instance.config.Setu.Paulzzh,
-		pixiv.PixivID:           instance.setubot.Pixiv,
+		pixiv.PixivID:           instance.setuBot.GetPixiv(),
 	}
 	searchCmd := map[string]search.Search{
 		google.GoogleID:         &google.Google{},
@@ -194,30 +198,10 @@ func onPrivateMessage(qqClient *client.QQClient, msg *message.PrivateMessage) {
 		return
 	}
 
-	setuCmd := make(map[setu.Setu]struct{})
-	searchCmd := make(map[search.Search]struct{})
-	momentCmd := make(map[moment.Moment]struct{})
-	for c := range cmd {
-		switch c := c.(type) {
-		case setu.Setu:
-			setuCmd[c] = struct{}{}
-		case search.Search:
-			searchCmd[c] = struct{}{}
-		case moment.Moment:
-			momentCmd[c] = struct{}{}
-		default:
-			logger.Warn("未知的机器人命令类型")
-		}
-	}
-
-	if len(setuCmd) != 0 {
-		instance.config.Setu.HandlePrivateMessage(qqClient, msg, setuCmd, keyword)
-	}
-	if len(searchCmd) != 0 {
-		instance.config.Search.HandlePrivateMessage(qqClient, msg, searchCmd, keyword)
-	}
-	if len(momentCmd) != 0 {
-		instance.config.Moment.HandlePrivateMessage(qqClient, msg, momentCmd, keyword)
+	if len(cmd) != 0 {
+		instance.setuBot.HandlePrivateMessage(qqClient, msg, cmd, keyword)
+		instance.searchBot.HandlePrivateMessage(qqClient, msg, cmd, keyword)
+		instance.momentBot.HandlePrivateMessage(qqClient, msg, cmd, keyword)
 	}
 }
 
@@ -238,30 +222,10 @@ func onGroupMessage(qqClient *client.QQClient, msg *message.GroupMessage) {
 			return
 		}
 
-		setuCmd := make(map[setu.Setu]struct{})
-		searchCmd := make(map[search.Search]struct{})
-		momentCmd := make(map[moment.Moment]struct{})
-		for c := range cmd {
-			switch c := c.(type) {
-			case setu.Setu:
-				setuCmd[c] = struct{}{}
-			case search.Search:
-				searchCmd[c] = struct{}{}
-			case moment.Moment:
-				momentCmd[c] = struct{}{}
-			default:
-				logger.Warn("未知的机器人命令类型")
-			}
-		}
-
-		if len(setuCmd) != 0 {
-			instance.config.Setu.HandleGroupMessage(qqClient, msg, setuCmd, keyword)
-		}
-		if len(searchCmd) != 0 {
-			instance.config.Search.HandleGroupMessage(qqClient, msg, searchCmd, keyword)
-		}
-		if len(momentCmd) != 0 {
-			instance.config.Moment.HandleGroupMessage(qqClient, msg, momentCmd, keyword)
+		if len(cmd) != 0 {
+			instance.setuBot.HandleGroupMessage(qqClient, msg, cmd, keyword)
+			instance.searchBot.HandleGroupMessage(qqClient, msg, cmd, keyword)
+			instance.momentBot.HandleGroupMessage(qqClient, msg, cmd, keyword)
 		}
 	}
 }

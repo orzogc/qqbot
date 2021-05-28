@@ -44,10 +44,22 @@ type Config struct {
 	Reply    Reply               `json:"reply"`    // 回复配置
 }
 
-// 部分配置没有设置的话采用默认配置
-func (c *Config) SetConfig() {
-	if len(c.Commands) == 0 {
-		c.Commands = map[string][]string{
+// 搜索机器人
+type SearchBot struct {
+	config *Config // 配置
+}
+
+// 新建搜索机器人
+func NewSearchBot(config *Config) *SearchBot {
+	return &SearchBot{
+		config: config,
+	}
+}
+
+// 部分配置没有设置的话采用默认配置，实现Command接口
+func (b *SearchBot) SetConfig() {
+	if len(b.config.Commands) == 0 {
+		b.config.Commands = map[string][]string{
 			google.GoogleID:         {"google", "谷歌"},
 			duckduckgo.DuckDuckGoID: {"duck"},
 			acfun.AcFunVideoID:      {"ac", "a站", "缺b乐", "缺逼乐", "爱稀饭"},
@@ -55,48 +67,68 @@ func (c *Config) SetConfig() {
 			ehentai.EHentaiID:       {"eh"},
 		}
 	}
-	if c.Reply.SearchFailed == "" {
-		c.Reply.SearchFailed = "搜索失败"
+	if b.config.Reply.SearchFailed == "" {
+		b.config.Reply.SearchFailed = "搜索失败"
 	}
-	if c.Reply.SendResultFailed == "" {
-		c.Reply.SendResultFailed = "发送搜索结果失败"
+	if b.config.Reply.SendResultFailed == "" {
+		b.config.Reply.SendResultFailed = "发送搜索结果失败"
 	}
 }
 
-// 处理私聊消息
-func (c *Config) HandlePrivateMessage(qqClient *client.QQClient, msg *message.PrivateMessage, cmd map[Search]struct{}, keyword string) {
+// 处理私聊消息，实现Command接口
+func (b *SearchBot) HandlePrivateMessage(qqClient *client.QQClient, msg *message.PrivateMessage, cmd map[interface{}]struct{}, keyword string) {
 	logger := logger.WithField("from", "HandlePrivateMessage")
 
-	result, err := search(cmd, keyword)
+	searchCmd := make(map[Search]struct{})
+	for c := range cmd {
+		if c, ok := c.(Search); ok {
+			searchCmd[c] = struct{}{}
+		}
+	}
+	if len(searchCmd) == 0 {
+		return
+	}
+
+	result, err := search(searchCmd, keyword)
 	if err != nil {
 		logger.WithError(err).WithField("privateMessage", msg.ToString()).Error("搜索失败")
-		qqbot_utils.SendPrivateText(qqClient, msg, c.Reply.SearchFailed)
+		qqbot_utils.SendPrivateText(qqClient, msg, b.config.Reply.SearchFailed)
 		if result == "" {
 			return
 		}
 	}
 	if result != "" {
 		if ok := qqbot_utils.SendPrivateText(qqClient, msg, result); !ok {
-			qqbot_utils.SendPrivateText(qqClient, msg, c.Reply.SendResultFailed)
+			qqbot_utils.SendPrivateText(qqClient, msg, b.config.Reply.SendResultFailed)
 		}
 	}
 }
 
-// 处理群聊消息
-func (c *Config) HandleGroupMessage(qqClient *client.QQClient, msg *message.GroupMessage, cmd map[Search]struct{}, keyword string) {
+// 处理群聊消息，实现Command接口
+func (b *SearchBot) HandleGroupMessage(qqClient *client.QQClient, msg *message.GroupMessage, cmd map[interface{}]struct{}, keyword string) {
 	logger := logger.WithField("from", "HandleGroupMessage")
 
-	result, err := search(cmd, keyword)
+	searchCmd := make(map[Search]struct{})
+	for c := range cmd {
+		if c, ok := c.(Search); ok {
+			searchCmd[c] = struct{}{}
+		}
+	}
+	if len(searchCmd) == 0 {
+		return
+	}
+
+	result, err := search(searchCmd, keyword)
 	if err != nil {
 		logger.WithError(err).WithField("groupMessage", msg.ToString()).Error("搜索失败")
-		qqbot_utils.ReplyGroupText(qqClient, msg, c.Reply.SearchFailed)
+		qqbot_utils.ReplyGroupText(qqClient, msg, b.config.Reply.SearchFailed)
 		if result == "" {
 			return
 		}
 	}
 	if result != "" {
 		if ok := qqbot_utils.ReplyGroupText(qqClient, msg, result); !ok {
-			qqbot_utils.ReplyGroupText(qqClient, msg, c.Reply.SendResultFailed)
+			qqbot_utils.ReplyGroupText(qqClient, msg, b.config.Reply.SendResultFailed)
 		}
 	}
 }

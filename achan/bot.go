@@ -66,14 +66,14 @@ func (b *AchanBot) Init() {
 
 	err = viper.ReadInConfig()
 	if err != nil {
-		logger.WithError(err).Warn("读取设置文件setu.json失败，使用默认设置")
+		logger.WithError(err).Warn("读取设置文件achan.json失败，使用默认设置")
 		instance.config = new(Config)
 		instance.config.Replace = make(map[string]string)
 		instance.config.Replace2 = make(map[string]string)
 	} else {
 		err = viper.Unmarshal(&instance.config)
 		if err != nil {
-			logger.WithError(err).Warn("设置文件setu.json的内容无效，使用默认设置")
+			logger.WithError(err).Warn("设置文件achan.json的内容无效，使用默认设置")
 			instance.config = new(Config)
 			instance.config.Replace = make(map[string]string)
 			instance.config.Replace2 = make(map[string]string)

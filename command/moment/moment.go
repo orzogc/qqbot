@@ -37,23 +37,89 @@ type Config struct {
 	Reply    Reply               `json:"reply"`    // 回复配置
 }
 
-// 部分配置没有设置的话采用默认配置
-func (c *Config) SetConfig() {
-	if len(c.Commands) == 0 {
-		c.Commands = map[string][]string{
+// 动态机器人
+type MomentBot struct {
+	config *Config // 配置
+}
+
+// 新建动态机器人
+func NewMomentBot(config *Config) *MomentBot {
+	return &MomentBot{
+		config: config,
+	}
+}
+
+// 部分配置没有设置的话采用默认配置，实现Command接口
+func (b *MomentBot) SetConfig() {
+	if len(b.config.Commands) == 0 {
+		b.config.Commands = map[string][]string{
 			square.AcFunSquareID: {"广场", "square"},
 		}
 	}
-	if c.Reply.GetMomentFailed == "" {
-		c.Reply.GetMomentFailed = "获取动态失败"
+	if b.config.Reply.GetMomentFailed == "" {
+		b.config.Reply.GetMomentFailed = "获取动态失败"
 	}
-	if c.Reply.SendMomentFailed == "" {
-		c.Reply.SendMomentFailed = "发送动态失败"
+	if b.config.Reply.SendMomentFailed == "" {
+		b.config.Reply.SendMomentFailed = "发送动态失败"
+	}
+}
+
+// 处理私聊消息，实现Command接口
+func (b *MomentBot) HandlePrivateMessage(qqClient *client.QQClient, msg *message.PrivateMessage, cmd map[interface{}]struct{}, keyword string) {
+	logger := logger.WithField("from", "HandlePrivateMessage")
+
+	momentCmd := make(map[Moment]struct{})
+	for c := range cmd {
+		if c, ok := c.(Moment); ok {
+			momentCmd[c] = struct{}{}
+		}
+	}
+	if len(momentCmd) == 0 {
+		return
+	}
+
+	moments, err := getMoment(momentCmd, keyword)
+	if err != nil {
+		logger.WithError(err).WithField("privateMessage", msg.ToString()).Error("获取动态失败")
+		qqbot_utils.SendPrivateText(qqClient, msg, b.config.Reply.GetMomentFailed)
+		if len(moments) == 0 {
+			return
+		}
+	}
+	if len(moments) != 0 {
+		b.sendPrivateMessage(qqClient, msg, moments)
+	}
+}
+
+// 处理群聊消息，实现Command接口
+func (b *MomentBot) HandleGroupMessage(qqClient *client.QQClient, msg *message.GroupMessage, cmd map[interface{}]struct{}, keyword string) {
+	logger := logger.WithField("from", "HandleGroupMessage")
+
+	momentCmd := make(map[Moment]struct{})
+	for c := range cmd {
+		if c, ok := c.(Moment); ok {
+			momentCmd[c] = struct{}{}
+		}
+	}
+	if len(momentCmd) == 0 {
+		return
+	}
+
+	moments, err := getMoment(momentCmd, keyword)
+	if err != nil {
+		logger.WithError(err).WithField("groupMessage", msg.ToString()).Error("获取动态失败")
+		qqbot_utils.ReplyGroupText(qqClient, msg, b.config.Reply.GetMomentFailed)
+		if len(moments) == 0 {
+			return
+		}
+	}
+	if len(moments) != 0 {
+		b.sendGroupMessage(qqClient, msg, moments)
 	}
 }
 
 // 发送私聊信息
-func (c *Config) sendPrivateMessage(qqClient *client.QQClient, msg *message.PrivateMessage, moments []moment_utils.Moment) {
+func (b *MomentBot) sendPrivateMessage(qqClient *client.QQClient, msg *message.PrivateMessage, moments []moment_utils.Moment) {
 	logger := logger.WithField("from", "sendPrivateMessage")
 
 	reply := message.NewSendingMessage()
@@ -73,12 +139,12 @@ func (c *Config) sendPrivateMessage(qqClient *client.QQClient, msg *message.Priv
 	logger.WithField("receiverQQ", msg.Sender.Uin).Info("发送动态")
 	if result := qqClient.SendPrivateMessage(msg.Sender.Uin, reply); result == nil || result.Id <= 0 {
 		logger.WithField("receiverQQ", msg.Sender.Uin).Error("发送动态失败")
-		qqbot_utils.SendPrivateText(qqClient, msg, c.Reply.SendMomentFailed)
+		qqbot_utils.SendPrivateText(qqClient, msg, b.config.Reply.SendMomentFailed)
 	}
 }
 
 // 发送群聊消息
-func (c *Config) sendGroupMessage(qqClient *client.QQClient, msg *message.GroupMessage, moments []moment_utils.Moment) {
+func (b *MomentBot) sendGroupMessage(qqClient *client.QQClient, msg *message.GroupMessage, moments []moment_utils.Moment) {
 	logger := logger.WithField("from", "sendGroupMessage")
 
 	reply := message.NewSendingMessage()
@@ -107,41 +173,7 @@ func (c *Config) sendGroupMessage(qqClient *client.QQClient, msg *message.GroupM
 			WithField("qqGroup", msg.GroupCode).
 			WithField("receiverQQ", msg.Sender.Uin).
 			Error("发送动态失败")
-		qqbot_utils.ReplyGroupText(qqClient, msg, c.Reply.SendMomentFailed)
-	}
-}
-
-// 处理私聊消息
-func (c *Config) HandlePrivateMessage(qqClient *client.QQClient, msg *message.PrivateMessage, cmd map[Moment]struct{}, keyword string) {
-	logger := logger.WithField("from", "HandlePrivateMessage")
-
-	moments, err := getMoment(cmd, keyword)
-	if err != nil {
-		logger.WithError(err).WithField("privateMessage", msg.ToString()).Error("获取动态失败")
-		qqbot_utils.SendPrivateText(qqClient, msg, c.Reply.GetMomentFailed)
-		if len(moments) == 0 {
-			return
-		}
-	}
-	if len(moments) != 0 {
-		c.sendPrivateMessage(qqClient, msg, moments)
-	}
-}
-
-// 处理群聊消息
-func (c *Config) HandleGroupMessage(qqClient *client.QQClient, msg *message.GroupMessage, cmd map[Moment]struct{}, keyword string) {
-	logger := logger.WithField("from", "HandleGroupMessage")
-
-	moments, err := getMoment(cmd, keyword)
-	if err != nil {
-		logger.WithError(err).WithField("groupMessage", msg.ToString()).Error("获取动态失败")
-		qqbot_utils.ReplyGroupText(qqClient, msg, c.Reply.GetMomentFailed)
-		if len(moments) == 0 {
-			return
-		}
-	}
-	if len(moments) != 0 {
-		c.sendGroupMessage(qqClient, msg, moments)
+		qqbot_utils.ReplyGroupText(qqClient, msg, b.config.Reply.SendMomentFailed)
 	}
 }
 

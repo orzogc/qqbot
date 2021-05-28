@@ -63,20 +63,27 @@ type Config struct {
 
 // 图片机器人
 type SetuBot struct {
-	Pixiv *pixiv.Pixiv // pixiv
+	config *Config      // 配置
+	pixiv  *pixiv.Pixiv // pixiv
 }
 
 // 新建图片机器人
-func NewSetuBot(PHPSESSID string) *SetuBot {
+func NewSetuBot(config *Config) *SetuBot {
 	return &SetuBot{
-		Pixiv: pixiv.New(PHPSESSID),
+		config: config,
+		pixiv:  pixiv.New(config.Pixiv.PHPSESSID),
 	}
 }
 
-// 部分配置没有设置的话采用默认配置
-func (c *Config) SetConfig() {
-	if len(c.Commands) == 0 {
-		c.Commands = map[string][]string{
+// 返回 *pixiv.Pixiv
+func (b *SetuBot) GetPixiv() *pixiv.Pixiv {
+	return b.pixiv
+}
+
+// 部分配置没有设置的话采用默认配置，实现Command接口
+func (b *SetuBot) SetConfig() {
+	if len(b.config.Commands) == 0 {
+		b.config.Commands = map[string][]string{
 			lolicon.LoliconID:       {"色图", "涩图", "瑟图", "setu"},
 			islandwind233.AnimeID:   {"二次元", "二刺猿", "erciyuan"},
 			islandwind233.CosplayID: {"cos", "余弦", "三次元"},
@@ -84,38 +91,112 @@ func (c *Config) SetConfig() {
 			pixiv.PixivID:           {"pixiv", "p站"},
 		}
 	}
-	if c.Reply.Normal == "" {
-		c.Reply.Normal = "这是您点的图片"
+	if b.config.Reply.Normal == "" {
+		b.config.Reply.Normal = "这是您点的图片"
 	}
-	if c.Reply.GetImageFailed == "" {
-		c.Reply.GetImageFailed = "获取图片失败"
+	if b.config.Reply.GetImageFailed == "" {
+		b.config.Reply.GetImageFailed = "获取图片失败"
 	}
-	if c.Reply.UploadImageFailed == "" {
-		c.Reply.UploadImageFailed = "上传图片失败"
+	if b.config.Reply.UploadImageFailed == "" {
+		b.config.Reply.UploadImageFailed = "上传图片失败"
 	}
-	if c.Reply.SendImageFailed == "" {
-		c.Reply.SendImageFailed = "发送图片失败"
+	if b.config.Reply.SendImageFailed == "" {
+		b.config.Reply.SendImageFailed = "发送图片失败"
 	}
-	if c.Reply.KeywordNotFound == "" {
-		c.Reply.KeywordNotFound = "找不到符合关键字的图片"
+	if b.config.Reply.KeywordNotFound == "" {
+		b.config.Reply.KeywordNotFound = "找不到符合关键字的图片"
 	}
-	if c.Reply.QuotaLimit == "" {
-		c.Reply.QuotaLimit = "已经达到接口的调用额度上限"
+	if b.config.Reply.QuotaLimit == "" {
+		b.config.Reply.QuotaLimit = "已经达到接口的调用额度上限"
 	}
-	if c.Reply.TagError == "" {
-		c.Reply.TagError = "东方图片搜索关键字必须是英文字母"
+	if b.config.Reply.TagError == "" {
+		b.config.Reply.TagError = "东方图片搜索关键字必须是英文字母"
 	}
-	if c.Reply.NoTagError == "" {
-		c.Reply.NoTagError = "pixiv图片搜索需要关键字"
+	if b.config.Reply.NoTagError == "" {
+		b.config.Reply.NoTagError = "pixiv图片搜索需要关键字"
+	}
+}
+
+// 处理私聊消息，实现Command接口
+func (b *SetuBot) HandlePrivateMessage(qqClient *client.QQClient, msg *message.PrivateMessage, cmd map[interface{}]struct{}, keyword string) {
+	logger := logger.WithField("from", "HandlePrivateMessage")
+
+	setuCmd := make(map[Setu]struct{})
+	for c := range cmd {
+		if c, ok := c.(Setu); ok {
+			setuCmd[c] = struct{}{}
+		}
+	}
+	if len(setuCmd) == 0 {
+		return
+	}
+
+	images, err := getImage(setuCmd, keyword)
+	if err != nil {
+		logger.WithError(err).WithField("privateMessage", msg.ToString()).Error("获取图片失败")
+		if errors.Is(err, lolicon.ErrorKeywordNotFound) || errors.Is(err, pixiv.ErrorSearchFailed) {
+			qqbot_utils.SendPrivateText(qqClient, msg, b.config.Reply.KeywordNotFound)
+		} else if errors.Is(err, lolicon.ErrorQuotaLimit) {
+			qqbot_utils.SendPrivateText(qqClient, msg, b.config.Reply.QuotaLimit)
+		} else if errors.Is(err, paulzzh.ErrorTag) {
+			qqbot_utils.SendPrivateText(qqClient, msg, b.config.Reply.TagError)
+		} else if errors.Is(err, pixiv.ErrorNoTag) {
+			qqbot_utils.SendPrivateText(qqClient, msg, b.config.Reply.NoTagError)
+		} else {
+			qqbot_utils.SendPrivateText(qqClient, msg, b.config.Reply.GetImageFailed)
+		}
+		if len(images) == 0 {
+			return
+		}
+	}
+	if len(images) != 0 {
+		b.sendPrivateImage(qqClient, msg, images)
+	}
+}
+
+// 处理群聊消息，实现Command接口
+func (b *SetuBot) HandleGroupMessage(qqClient *client.QQClient, msg *message.GroupMessage, cmd map[interface{}]struct{}, keyword string) {
+	logger := logger.WithField("from", "HandleGroupMessage")
+
+	setuCmd := make(map[Setu]struct{})
+	for c := range cmd {
+		if c, ok := c.(Setu); ok {
+			setuCmd[c] = struct{}{}
+		}
+	}
+	if len(setuCmd) == 0 {
+		return
+	}
+
+	images, err := getImage(setuCmd, keyword)
+	if err != nil {
+		logger.WithError(err).WithField("groupMessage", msg.ToString()).Error("获取图片失败")
+		if errors.Is(err, lolicon.ErrorKeywordNotFound) || errors.Is(err, pixiv.ErrorSearchFailed) {
+			qqbot_utils.ReplyGroupText(qqClient, msg, b.config.Reply.KeywordNotFound)
+		} else if errors.Is(err, lolicon.ErrorQuotaLimit) {
+			qqbot_utils.ReplyGroupText(qqClient, msg, b.config.Reply.QuotaLimit)
+		} else if errors.Is(err, paulzzh.ErrorTag) {
+			qqbot_utils.ReplyGroupText(qqClient, msg, b.config.Reply.TagError)
+		} else if errors.Is(err, pixiv.ErrorNoTag) {
+			qqbot_utils.ReplyGroupText(qqClient, msg, b.config.Reply.NoTagError)
+		} else {
+			qqbot_utils.ReplyGroupText(qqClient, msg, b.config.Reply.GetImageFailed)
+		}
+		if len(images) == 0 {
+			return
+		}
+	}
+	if len(images) != 0 {
+		b.sendGroupImage(qqClient, msg, images)
 	}
 }
 
 // 发送私聊图片
-func (c *Config) sendPrivateImage(qqClient *client.QQClient, msg *message.PrivateMessage, images [][]byte) {
+func (b *SetuBot) sendPrivateImage(qqClient *client.QQClient, msg *message.PrivateMessage, images [][]byte) {
 	logger := logger.WithField("from", "sendPrivateImage")
 
 	reply := message.NewSendingMessage()
-	reply.Append(message.NewText(c.Reply.Normal))
+	reply.Append(message.NewText(b.config.Reply.Normal))
 	num := 0
 	for _, img := range images {
 		if len(img) != 0 {
@@ -132,20 +213,20 @@ func (c *Config) sendPrivateImage(qqClient *client.QQClient, msg *message.Privat
 		logger.WithField("receiverQQ", msg.Sender.Uin).Infof("发送 %d 张私聊图片", num)
 		if result := qqClient.SendPrivateMessage(msg.Sender.Uin, reply); result == nil || result.Id <= 0 {
 			logger.WithField("receiverQQ", msg.Sender.Uin).Error("发送私聊图片失败")
-			qqbot_utils.SendPrivateText(qqClient, msg, c.Reply.SendImageFailed)
+			qqbot_utils.SendPrivateText(qqClient, msg, b.config.Reply.SendImageFailed)
 		}
 	} else {
-		qqbot_utils.SendPrivateText(qqClient, msg, c.Reply.UploadImageFailed)
+		qqbot_utils.SendPrivateText(qqClient, msg, b.config.Reply.UploadImageFailed)
 	}
 }
 
 // 发送群聊图片
-func (c *Config) sendGroupImage(qqClient *client.QQClient, msg *message.GroupMessage, images [][]byte) {
+func (b *SetuBot) sendGroupImage(qqClient *client.QQClient, msg *message.GroupMessage, images [][]byte) {
 	logger := logger.WithField("from", "sendGroupImage")
 
 	reply := message.NewSendingMessage()
 	reply.Append(message.NewReply(msg))
-	reply.Append(message.NewText(c.Reply.Normal))
+	reply.Append(message.NewText(b.config.Reply.Normal))
 	num := 0
 	for _, img := range images {
 		if len(img) != 0 {
@@ -170,64 +251,10 @@ func (c *Config) sendGroupImage(qqClient *client.QQClient, msg *message.GroupMes
 				WithField("qqGroup", msg.GroupCode).
 				WithField("receiverQQ", msg.Sender.Uin).
 				Error("发送群聊图片失败")
-			qqbot_utils.ReplyGroupText(qqClient, msg, c.Reply.SendImageFailed)
+			qqbot_utils.ReplyGroupText(qqClient, msg, b.config.Reply.SendImageFailed)
 		}
 	} else {
-		qqbot_utils.ReplyGroupText(qqClient, msg, c.Reply.UploadImageFailed)
-	}
-}
-
-// 处理私聊消息
-func (c *Config) HandlePrivateMessage(qqClient *client.QQClient, msg *message.PrivateMessage, cmd map[Setu]struct{}, keyword string) {
-	logger := logger.WithField("from", "HandlePrivateMessage")
-
-	images, err := getImage(cmd, keyword)
-	if err != nil {
-		logger.WithError(err).WithField("privateMessage", msg.ToString()).Error("获取图片失败")
-		if errors.Is(err, lolicon.ErrorKeywordNotFound) || errors.Is(err, pixiv.ErrorSearchFailed) {
-			qqbot_utils.SendPrivateText(qqClient, msg, c.Reply.KeywordNotFound)
-		} else if errors.Is(err, lolicon.ErrorQuotaLimit) {
-			qqbot_utils.SendPrivateText(qqClient, msg, c.Reply.QuotaLimit)
-		} else if errors.Is(err, paulzzh.ErrorTag) {
-			qqbot_utils.SendPrivateText(qqClient, msg, c.Reply.TagError)
-		} else if errors.Is(err, pixiv.ErrorNoTag) {
-			qqbot_utils.SendPrivateText(qqClient, msg, c.Reply.NoTagError)
-		} else {
-			qqbot_utils.SendPrivateText(qqClient, msg, c.Reply.GetImageFailed)
-		}
-		if len(images) == 0 {
-			return
-		}
-	}
-	if len(images) != 0 {
-		c.sendPrivateImage(qqClient, msg, images)
-	}
-}
-
-// 处理群聊消息
-func (c *Config) HandleGroupMessage(qqClient *client.QQClient, msg *message.GroupMessage, cmd map[Setu]struct{}, keyword string) {
-	logger := logger.WithField("from", "HandleGroupMessage")
-
-	images, err := getImage(cmd, keyword)
-	if err != nil {
-		logger.WithError(err).WithField("groupMessage", msg.ToString()).Error("获取图片失败")
-		if errors.Is(err, lolicon.ErrorKeywordNotFound) || errors.Is(err, pixiv.ErrorSearchFailed) {
-			qqbot_utils.ReplyGroupText(qqClient, msg, c.Reply.KeywordNotFound)
-		} else if errors.Is(err, lolicon.ErrorQuotaLimit) {
-			qqbot_utils.ReplyGroupText(qqClient, msg, c.Reply.QuotaLimit)
-		} else if errors.Is(err, paulzzh.ErrorTag) {
-			qqbot_utils.ReplyGroupText(qqClient, msg, c.Reply.TagError)
-		} else if errors.Is(err, pixiv.ErrorNoTag) {
-			qqbot_utils.ReplyGroupText(qqClient, msg, c.Reply.NoTagError)
-		} else {
-			qqbot_utils.ReplyGroupText(qqClient, msg, c.Reply.GetImageFailed)
-		}
-		if len(images) == 0 {
-			return
-		}
-	}
-	if len(images) != 0 {
-		c.sendGroupImage(qqClient, msg, images)
+		qqbot_utils.ReplyGroupText(qqClient, msg, b.config.Reply.UploadImageFailed)
 	}
 }
 
