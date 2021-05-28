@@ -40,11 +40,9 @@ type Config struct {
 
 // 处理命令的机器人
 type CommandBot struct {
-	config    *Config                  // 配置
-	commands  map[string][]interface{} // 命令
-	setuBot   *setu.SetuBot            // 图片机器人
-	searchBot *search.SearchBot        // 搜索机器人
-	momentBot *moment.MomentBot        // 动态机器人
+	config   *Config                  // 配置
+	commands map[string][]interface{} // 命令
+	bots     []Command                // 命令机器人
 }
 
 // 初始化
@@ -89,12 +87,14 @@ func (b *CommandBot) Init() {
 		instance.config.Reply.NoCommand = "未知命令"
 	}
 	instance.commands = make(map[string][]interface{})
-	instance.setuBot = setu.NewSetuBot(&instance.config.Setu)
-	instance.searchBot = search.NewSearchBot(&instance.config.Search)
-	instance.momentBot = moment.NewMomentBot(&instance.config.Moment)
-	instance.commands = instance.setuBot.SetConfig(instance.commands)
-	instance.commands = instance.searchBot.SetConfig(instance.commands)
-	instance.commands = instance.momentBot.SetConfig(instance.commands)
+	instance.bots = []Command{
+		setu.NewSetuBot(&instance.config.Setu),
+		search.NewSearchBot(&instance.config.Search),
+		moment.NewMomentBot(&instance.config.Moment),
+	}
+	for _, bot := range instance.bots {
+		instance.commands = bot.SetConfig(instance.commands)
+	}
 }
 
 func (b *CommandBot) PostInit() {}
@@ -127,9 +127,9 @@ func onPrivateMessage(qqClient *client.QQClient, msg *message.PrivateMessage) {
 	}
 
 	if len(cmd) != 0 {
-		instance.setuBot.HandlePrivateMessage(qqClient, msg, cmd, keyword)
-		instance.searchBot.HandlePrivateMessage(qqClient, msg, cmd, keyword)
-		instance.momentBot.HandlePrivateMessage(qqClient, msg, cmd, keyword)
+		for _, bot := range instance.bots {
+			bot.HandlePrivateMessage(qqClient, msg, cmd, keyword)
+		}
 	}
 }
 
@@ -151,9 +151,9 @@ func onGroupMessage(qqClient *client.QQClient, msg *message.GroupMessage) {
 		}
 
 		if len(cmd) != 0 {
-			instance.setuBot.HandleGroupMessage(qqClient, msg, cmd, keyword)
-			instance.searchBot.HandleGroupMessage(qqClient, msg, cmd, keyword)
-			instance.momentBot.HandleGroupMessage(qqClient, msg, cmd, keyword)
+			for _, bot := range instance.bots {
+				bot.HandleGroupMessage(qqClient, msg, cmd, keyword)
+			}
 		}
 	}
 }
