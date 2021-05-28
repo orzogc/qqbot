@@ -16,8 +16,8 @@ var (
 
 // Command接口
 type Command interface {
-	// 部分配置没有设置的话采用默认配置
-	SetConfig()
+	// 部分配置没有设置的话采用默认配置，设置cmd，返回设置好的cmd
+	SetConfig(cmd map[string][]interface{}) map[string][]interface{}
 	// 处理私聊消息
 	HandlePrivateMessage(qqClient *client.QQClient, msg *message.PrivateMessage, cmd map[interface{}]struct{}, keyword string)
 	// 处理群聊消息

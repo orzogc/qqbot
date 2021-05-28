@@ -75,13 +75,8 @@ func NewSetuBot(config *Config) *SetuBot {
 	}
 }
 
-// 返回 *pixiv.Pixiv
-func (b *SetuBot) GetPixiv() *pixiv.Pixiv {
-	return b.pixiv
-}
-
-// 部分配置没有设置的话采用默认配置，实现Command接口
-func (b *SetuBot) SetConfig() {
+// 部分配置没有设置的话采用默认配置，设置cmd，返回设置好的cmd，实现Command接口
+func (b *SetuBot) SetConfig(cmd map[string][]interface{}) map[string][]interface{} {
 	if len(b.config.Commands) == 0 {
 		b.config.Commands = map[string][]string{
 			lolicon.LoliconID:       {"色图", "涩图", "瑟图", "setu"},
@@ -115,6 +110,31 @@ func (b *SetuBot) SetConfig() {
 	if b.config.Reply.NoTagError == "" {
 		b.config.Reply.NoTagError = "pixiv图片搜索需要关键字"
 	}
+
+	setuCmd := map[string]Setu{
+		lolicon.LoliconID:       &b.config.Lolicon,
+		islandwind233.AnimeID:   &islandwind233.Anime{},
+		islandwind233.CosplayID: &islandwind233.Cosplay{},
+		paulzzh.PaulzzhID:       &b.config.Paulzzh,
+		pixiv.PixivID:           b.pixiv,
+	}
+	for k, v := range b.config.Commands {
+		command, ok := setuCmd[k]
+		if !ok {
+			logger.Warnf("未知的图片机器人命令ID：%s", k)
+			continue
+		}
+		for _, s := range v {
+			if c, ok := cmd[s]; ok {
+				c = append(c, command)
+				cmd[s] = c
+			} else {
+				cmd[s] = []interface{}{command}
+			}
+		}
+	}
+
+	return cmd
 }
 
 // 处理私聊消息，实现Command接口

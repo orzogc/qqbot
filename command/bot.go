@@ -12,17 +12,8 @@ import (
 	"github.com/Mrs4s/MiraiGo/client"
 	"github.com/Mrs4s/MiraiGo/message"
 	"github.com/orzogc/qqbot/command/moment"
-	"github.com/orzogc/qqbot/command/moment/square"
 	"github.com/orzogc/qqbot/command/search"
-	"github.com/orzogc/qqbot/command/search/acfun"
-	"github.com/orzogc/qqbot/command/search/duckduckgo"
-	"github.com/orzogc/qqbot/command/search/ehentai"
-	"github.com/orzogc/qqbot/command/search/google"
 	"github.com/orzogc/qqbot/command/setu"
-	"github.com/orzogc/qqbot/command/setu/islandwind233"
-	"github.com/orzogc/qqbot/command/setu/lolicon"
-	"github.com/orzogc/qqbot/command/setu/paulzzh"
-	"github.com/orzogc/qqbot/command/setu/pixiv"
 	"github.com/orzogc/qqbot/qqbot_utils"
 	"github.com/spf13/viper"
 )
@@ -97,76 +88,13 @@ func (b *CommandBot) Init() {
 	if instance.config.Reply.NoCommand == "" {
 		instance.config.Reply.NoCommand = "未知命令"
 	}
+	instance.commands = make(map[string][]interface{})
 	instance.setuBot = setu.NewSetuBot(&instance.config.Setu)
 	instance.searchBot = search.NewSearchBot(&instance.config.Search)
 	instance.momentBot = moment.NewMomentBot(&instance.config.Moment)
-	instance.setuBot.SetConfig()
-	instance.searchBot.SetConfig()
-	instance.momentBot.SetConfig()
-
-	setuCmd := map[string]setu.Setu{
-		lolicon.LoliconID:       &instance.config.Setu.Lolicon,
-		islandwind233.AnimeID:   &islandwind233.Anime{},
-		islandwind233.CosplayID: &islandwind233.Cosplay{},
-		paulzzh.PaulzzhID:       &instance.config.Setu.Paulzzh,
-		pixiv.PixivID:           instance.setuBot.GetPixiv(),
-	}
-	searchCmd := map[string]search.Search{
-		google.GoogleID:         &google.Google{},
-		duckduckgo.DuckDuckGoID: &duckduckgo.DuckDuckGo{},
-		acfun.AcFunVideoID:      &acfun.AcFunVideo{},
-		acfun.AcFunArticleID:    &acfun.AcFunArticle{},
-		ehentai.EHentaiID:       &ehentai.EHentai{},
-	}
-	momentCmd := map[string]moment.Moment{
-		square.AcFunSquareID: &square.AcFunSquare{},
-	}
-	instance.commands = make(map[string][]interface{})
-	for k, v := range instance.config.Setu.Commands {
-		command, ok := setuCmd[k]
-		if !ok {
-			logger.Warnf("未知的图片机器人命令ID：%s", k)
-			continue
-		}
-		for _, s := range v {
-			if c, ok := instance.commands[s]; ok {
-				c = append(c, command)
-				instance.commands[s] = c
-			} else {
-				instance.commands[s] = []interface{}{command}
-			}
-		}
-	}
-	for k, v := range instance.config.Search.Commands {
-		command, ok := searchCmd[k]
-		if !ok {
-			logger.Warnf("未知的搜索机器人命令ID：%s", k)
-			continue
-		}
-		for _, s := range v {
-			if c, ok := instance.commands[s]; ok {
-				c = append(c, command)
-				instance.commands[s] = c
-			} else {
-				instance.commands[s] = []interface{}{command}
-			}
-		}
-	}
-	for k, v := range instance.config.Moment.Commands {
-		command, ok := momentCmd[k]
-		if !ok {
-			logger.Warnf("未知的动态机器人命令ID：%s", k)
-			continue
-		}
-		for _, s := range v {
-			if c, ok := instance.commands[s]; ok {
-				c = append(c, command)
-				instance.commands[s] = c
-			} else {
-				instance.commands[s] = []interface{}{command}
-			}
-		}
-	}
+	instance.commands = instance.setuBot.SetConfig(instance.commands)
+	instance.commands = instance.searchBot.SetConfig(instance.commands)
+	instance.commands = instance.momentBot.SetConfig(instance.commands)
 }
 
 func (b *CommandBot) PostInit() {}

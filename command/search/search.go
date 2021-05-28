@@ -56,8 +56,8 @@ func NewSearchBot(config *Config) *SearchBot {
 	}
 }
 
-// 部分配置没有设置的话采用默认配置，实现Command接口
-func (b *SearchBot) SetConfig() {
+// 部分配置没有设置的话采用默认配置，设置cmd，返回设置好的cmd，实现Command接口
+func (b *SearchBot) SetConfig(cmd map[string][]interface{}) map[string][]interface{} {
 	if len(b.config.Commands) == 0 {
 		b.config.Commands = map[string][]string{
 			google.GoogleID:         {"google", "谷歌"},
@@ -73,6 +73,31 @@ func (b *SearchBot) SetConfig() {
 	if b.config.Reply.SendResultFailed == "" {
 		b.config.Reply.SendResultFailed = "发送搜索结果失败"
 	}
+
+	searchCmd := map[string]Search{
+		google.GoogleID:         &google.Google{},
+		duckduckgo.DuckDuckGoID: &duckduckgo.DuckDuckGo{},
+		acfun.AcFunVideoID:      &acfun.AcFunVideo{},
+		acfun.AcFunArticleID:    &acfun.AcFunArticle{},
+		ehentai.EHentaiID:       &ehentai.EHentai{},
+	}
+	for k, v := range b.config.Commands {
+		command, ok := searchCmd[k]
+		if !ok {
+			logger.Warnf("未知的搜索机器人命令ID：%s", k)
+			continue
+		}
+		for _, s := range v {
+			if c, ok := cmd[s]; ok {
+				c = append(c, command)
+				cmd[s] = c
+			} else {
+				cmd[s] = []interface{}{command}
+			}
+		}
+	}
+
+	return cmd
 }
 
 // 处理私聊消息，实现Command接口

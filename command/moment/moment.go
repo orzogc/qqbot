@@ -49,8 +49,8 @@ func NewMomentBot(config *Config) *MomentBot {
 	}
 }
 
-// 部分配置没有设置的话采用默认配置，实现Command接口
-func (b *MomentBot) SetConfig() {
+// 部分配置没有设置的话采用默认配置，设置cmd，返回设置好的cmd，实现Command接口
+func (b *MomentBot) SetConfig(cmd map[string][]interface{}) map[string][]interface{} {
 	if len(b.config.Commands) == 0 {
 		b.config.Commands = map[string][]string{
 			square.AcFunSquareID: {"广场", "square"},
@@ -62,6 +62,27 @@ func (b *MomentBot) SetConfig() {
 	if b.config.Reply.SendMomentFailed == "" {
 		b.config.Reply.SendMomentFailed = "发送动态失败"
 	}
+
+	momentCmd := map[string]Moment{
+		square.AcFunSquareID: &square.AcFunSquare{},
+	}
+	for k, v := range b.config.Commands {
+		command, ok := momentCmd[k]
+		if !ok {
+			logger.Warnf("未知的动态机器人命令ID：%s", k)
+			continue
+		}
+		for _, s := range v {
+			if c, ok := cmd[s]; ok {
+				c = append(c, command)
+				cmd[s] = c
+			} else {
+				cmd[s] = []interface{}{command}
+			}
+		}
+	}
+
+	return cmd
 }
 
 // 处理私聊消息，实现Command接口
