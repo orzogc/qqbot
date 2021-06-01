@@ -121,15 +121,19 @@ func (l *Lolicon) Lolicon() (*Response, error) {
 }
 
 // 获取图片，实现Setu接口
-func (l *Lolicon) GetImage(keyword string) ([][]byte, error) {
+func (l *Lolicon) GetImage(keyword string) (*setu_utils.Image, error) {
 	lolicon := *l
 	lolicon.Keyword = keyword
 	r, err := lolicon.Lolicon()
 	if err != nil {
 		return nil, err
 	}
+	img, err := r.GetImage()
+	if err != nil {
+		return nil, err
+	}
 
-	return r.GetImage()
+	return &setu_utils.Image{Images: img}, nil
 }
 
 // 检查响应是否成功

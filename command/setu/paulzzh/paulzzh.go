@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/url"
 
+	"github.com/orzogc/qqbot/command/setu/setu_utils"
 	"github.com/orzogc/qqbot/qqbot_utils"
 )
 
@@ -160,7 +161,7 @@ func (p *Paulzzh) GetTouhouImage() ([]byte, error) {
 }
 
 // 获取图片，实现Setu接口
-func (p *Paulzzh) GetImage(keyword string) ([][]byte, error) {
+func (p *Paulzzh) GetImage(keyword string) (*setu_utils.Image, error) {
 	paulzzh := *p
 	paulzzh.Tag = keyword
 	img, err := paulzzh.GetTouhouImage()
@@ -168,5 +169,5 @@ func (p *Paulzzh) GetImage(keyword string) ([][]byte, error) {
 		return nil, err
 	}
 
-	return [][]byte{img}, nil
+	return &setu_utils.Image{Images: [][]byte{img}}, nil
 }

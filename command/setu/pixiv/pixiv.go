@@ -62,7 +62,7 @@ func New(PHPSESSID string) *Pixiv {
 }
 
 // 获取图片，实现Setu接口
-func (p *Pixiv) GetImage(keyword string) ([][]byte, error) {
+func (p *Pixiv) GetImage(keyword string) (*setu_utils.Image, error) {
 	if keyword == "" {
 		return nil, ErrorNoTag
 	}
@@ -136,5 +136,8 @@ func (p *Pixiv) GetImage(keyword string) ([][]byte, error) {
 		return nil, fmt.Errorf("获取pixiv图片失败")
 	}
 
-	return img, nil
+	return &setu_utils.Image{
+		Text:   setu_utils.PixivArtworksURL + art.ID,
+		Images: img,
+	}, nil
 }

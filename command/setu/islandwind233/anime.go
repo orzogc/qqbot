@@ -1,6 +1,7 @@
 package islandwind233
 
 import (
+	"github.com/orzogc/qqbot/command/setu/setu_utils"
 	"github.com/orzogc/qqbot/qqbot_utils"
 )
 
@@ -23,11 +24,11 @@ func (a *Anime) GetAnimeImage() ([]byte, error) {
 }
 
 // 获取图片，实现Setu接口，keyword没有用
-func (a *Anime) GetImage(keyword string) ([][]byte, error) {
+func (a *Anime) GetImage(keyword string) (*setu_utils.Image, error) {
 	img, err := a.GetAnimeImage()
 	if err != nil {
 		return nil, err
 	}
 
-	return [][]byte{img}, nil
+	return &setu_utils.Image{Images: [][]byte{img}}, nil
 }

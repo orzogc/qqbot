@@ -10,7 +10,7 @@ func TestAnimeGetImage(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(img) != 1 {
+	if len(img.Images) != 1 {
 		t.Fatal("failed to get anime image from islandwind233")
 	}
 }
@@ -21,7 +21,7 @@ func TestCosplayGetImage(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(img) != 1 {
+	if len(img.Images) != 1 {
 		t.Fatal("failed to get cosplay image from islandwind233")
 	}
 }

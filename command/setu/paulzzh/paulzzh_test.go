@@ -13,7 +13,7 @@ func TestPaulzzhGetImage302(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(img) != 1 {
+	if len(img.Images) != 1 {
 		t.Fatal("failed to get image from paulzzh")
 	}
 }
@@ -28,7 +28,7 @@ func TestPaulzzhGetImageJSON(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(img) != 1 {
+	if len(img.Images) != 1 {
 		t.Fatal("failed to get image from paulzzh")
 	}
 }

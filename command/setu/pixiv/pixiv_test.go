@@ -10,7 +10,7 @@ func TestPixivGetImage(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(img) == 0 {
+	if len(img.Images) == 0 {
 		t.Fatal("failed to get image from pixiv")
 	}
 }

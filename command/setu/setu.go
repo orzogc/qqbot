@@ -13,6 +13,7 @@ import (
 	"github.com/orzogc/qqbot/command/setu/lolicon"
 	"github.com/orzogc/qqbot/command/setu/paulzzh"
 	"github.com/orzogc/qqbot/command/setu/pixiv"
+	"github.com/orzogc/qqbot/command/setu/setu_utils"
 	"github.com/orzogc/qqbot/qqbot_utils"
 )
 
@@ -31,7 +32,7 @@ var (
 // 图片接口
 type Setu interface {
 	// 获取图片，keyword为搜索关键字，可以不支持搜索，可返回多个图片
-	GetImage(keyword string) ([][]byte, error)
+	GetImage(keyword string) (*setu_utils.Image, error)
 }
 
 // 回复配置
@@ -212,21 +213,26 @@ func (b *SetuBot) HandleGroupMessage(qqClient *client.QQClient, msg *message.Gro
 }
 
 // 发送私聊图片
-func (b *SetuBot) sendPrivateImage(qqClient *client.QQClient, msg *message.PrivateMessage, images [][]byte) {
+func (b *SetuBot) sendPrivateImage(qqClient *client.QQClient, msg *message.PrivateMessage, images []*setu_utils.Image) {
 	logger := logger.WithField("from", "sendPrivateImage")
 
 	reply := message.NewSendingMessage()
-	reply.Append(message.NewText(b.config.Reply.Normal))
+	reply.Append(message.NewText(b.config.Reply.Normal + "\n"))
 	num := 0
-	for _, img := range images {
-		if len(img) != 0 {
-			element, err := qqClient.UploadPrivateImage(msg.Sender.Uin, bytes.NewReader(img))
-			if err != nil {
-				logger.WithError(err).WithField("receiverQQ", msg.Sender.Uin).Error("上传私聊图片失败")
-				continue
+	for _, image := range images {
+		if image.Text != "" && len(image.Images) != 0 {
+			reply.Append(message.NewText(image.Text + "\n"))
+		}
+		for _, img := range image.Images {
+			if len(img) != 0 {
+				element, err := qqClient.UploadPrivateImage(msg.Sender.Uin, bytes.NewReader(img))
+				if err != nil {
+					logger.WithError(err).WithField("receiverQQ", msg.Sender.Uin).Error("上传私聊图片失败")
+					continue
+				}
+				reply.Append(element)
+				num++
 			}
-			reply.Append(element)
-			num++
 		}
 	}
 	if num != 0 {
@@ -241,25 +247,30 @@ func (b *SetuBot) sendPrivateImage(qqClient *client.QQClient, msg *message.Priva
 }
 
 // 发送群聊图片
-func (b *SetuBot) sendGroupImage(qqClient *client.QQClient, msg *message.GroupMessage, images [][]byte) {
+func (b *SetuBot) sendGroupImage(qqClient *client.QQClient, msg *message.GroupMessage, images []*setu_utils.Image) {
 	logger := logger.WithField("from", "sendGroupImage")
 
 	reply := message.NewSendingMessage()
 	reply.Append(message.NewReply(msg))
-	reply.Append(message.NewText(b.config.Reply.Normal))
+	reply.Append(message.NewText(b.config.Reply.Normal + "\n"))
 	num := 0
-	for _, img := range images {
-		if len(img) != 0 {
-			element, err := qqClient.UploadGroupImage(msg.GroupCode, bytes.NewReader(img))
-			if err != nil {
-				logger.WithError(err).
-					WithField("qqGroup", msg.GroupCode).
-					WithField("receiverQQ", msg.Sender.Uin).
-					Error("上传群聊图片失败")
-				continue
+	for _, image := range images {
+		if image.Text != "" && len(image.Images) != 0 {
+			reply.Append(message.NewText(image.Text + "\n"))
+		}
+		for _, img := range image.Images {
+			if len(img) != 0 {
+				element, err := qqClient.UploadGroupImage(msg.GroupCode, bytes.NewReader(img))
+				if err != nil {
+					logger.WithError(err).
+						WithField("qqGroup", msg.GroupCode).
+						WithField("receiverQQ", msg.Sender.Uin).
+						Error("上传群聊图片失败")
+					continue
+				}
+				reply.Append(element)
+				num++
 			}
-			reply.Append(element)
-			num++
 		}
 	}
 	if num != 0 {
@@ -279,10 +290,10 @@ func (b *SetuBot) sendGroupImage(qqClient *client.QQClient, msg *message.GroupMe
 }
 
 // 获取图片
-func getImage(cmd map[Setu]struct{}, keyword string) ([][]byte, error) {
+func getImage(cmd map[Setu]struct{}, keyword string) ([]*setu_utils.Image, error) {
 	logger := logger.WithField("from", "getImage")
 
-	var images [][]byte
+	images := make([]*setu_utils.Image, 0, len(cmd))
 	var e error
 	var mu sync.Mutex
 	var wg sync.WaitGroup
@@ -300,7 +311,7 @@ func getImage(cmd map[Setu]struct{}, keyword string) ([][]byte, error) {
 			}
 			mu.Lock()
 			defer mu.Unlock()
-			images = append(images, img...)
+			images = append(images, img)
 		}(s)
 	}
 	wg.Wait()

@@ -24,7 +24,7 @@ func TestLoliconGetImage(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(img) != 1 {
+	if len(img.Images) != 1 {
 		t.Fatal("failed to get image from lolicon")
 	}
 }
