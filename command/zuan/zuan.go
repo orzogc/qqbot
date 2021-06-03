@@ -26,14 +26,17 @@ type Zuan interface {
 
 // 回复配置
 type Reply struct {
-	GetTextFailed  string `json:"getTextFailed"`  // 获取祖安语句失败的回复
-	SendTextFailed string `json:"sendTextFailed"` // 发送祖安语句失败的回复
+	GetTextFailed    string `json:"getTextFailed"`    // 获取祖安语句失败的回复
+	SendTextFailed   string `json:"sendTextFailed"`   // 发送祖安语句失败的回复
+	FindObjectFailed string `json:"findObjectFailed"` // 寻找祖安对象失败的回复
 }
 
 // 配置
 type Config struct {
 	Commands map[string][]string `json:"commands"` // 命令关键字
 	Object   []int64             `json:"object"`   // 祖安对象QQ号（仅对QQ群有效）
+	Replace  map[string]string   `json:"replace"`  // 词语替换
+	Replace2 map[string]string   `json:"replace2"` // 词语替换第二层
 	Reply    Reply               `json:"reply"`    // 回复配置
 }
 
@@ -61,6 +64,9 @@ func (b *ZuanBot) SetConfig(cmd map[string][]interface{}) map[string][]interface
 	}
 	if b.config.Reply.SendTextFailed == "" {
 		b.config.Reply.SendTextFailed = "发送祖安语句失败"
+	}
+	if b.config.Reply.FindObjectFailed == "" {
+		b.config.Reply.FindObjectFailed = "寻找祖安对象失败"
 	}
 
 	zuanCmd := map[string]Zuan{
@@ -108,6 +114,8 @@ func (b *ZuanBot) HandlePrivateMessage(qqClient *client.QQClient, msg *message.P
 		}
 	}
 	if text != "" {
+		text = b.replace(text)
+		text = b.replace2(text)
 		if ok := qqbot_utils.SendPrivateText(qqClient, msg, text); !ok {
 			qqbot_utils.SendPrivateText(qqClient, msg, b.config.Reply.SendTextFailed)
 		}
@@ -137,6 +145,8 @@ func (b *ZuanBot) HandleGroupMessage(qqClient *client.QQClient, msg *message.Gro
 		}
 	}
 	if text != "" {
+		text = b.replace(text)
+		text = b.replace2(text)
 		receiver := make([]int64, 0, len(b.config.Object))
 		reply := message.NewSendingMessage()
 		for _, o := range b.config.Object {
@@ -146,6 +156,13 @@ func (b *ZuanBot) HandleGroupMessage(qqClient *client.QQClient, msg *message.Gro
 			}
 			reply.Append(message.NewAt(o, "@"+info.DisplayName()))
 			receiver = append(receiver, o)
+		}
+		if len(receiver) == 0 {
+			logger.WithField("qqGroup", msg.GroupCode).
+				WithField("receiverQQ", b.config.Object).
+				Info("寻找祖安对象失败")
+			qqbot_utils.ReplyGroupText(qqClient, msg, b.config.Reply.FindObjectFailed)
+			return
 		}
 		reply.Append(message.NewText(text))
 		logger.WithField("qqGroup", msg.GroupCode).
@@ -160,6 +177,24 @@ func (b *ZuanBot) HandleGroupMessage(qqClient *client.QQClient, msg *message.Gro
 			qqbot_utils.ReplyGroupText(qqClient, msg, b.config.Reply.SendTextFailed)
 		}
 	}
+}
+
+// 替换词语
+func (b *ZuanBot) replace(s string) string {
+	for k, v := range b.config.Replace {
+		s = strings.ReplaceAll(s, k, v)
+	}
+
+	return s
+}
+
+// 替换词语
+func (b *ZuanBot) replace2(s string) string {
+	for k, v := range b.config.Replace2 {
+		s = strings.ReplaceAll(s, k, v)
+	}
+
+	return s
 }
 
 func getText(cmd map[Zuan]struct{}) (string, error) {
