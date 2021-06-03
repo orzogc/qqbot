@@ -8,7 +8,7 @@ require (
 	github.com/NateScarlet/pixiv v0.6.2
 	github.com/PuerkitoBio/goquery v1.6.1
 	github.com/antchfx/xmlquery v1.3.6 // indirect
-	github.com/antchfx/xpath v1.1.11 // indirect
+	github.com/antchfx/xpath v1.2.0 // indirect
 	github.com/gocolly/colly/v2 v2.1.0 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/rocketlaunchr/google-search v1.1.2
@@ -19,7 +19,7 @@ require (
 	github.com/tidwall/pretty v1.1.1 // indirect
 	github.com/valyala/fastjson v1.6.3
 	golang.org/x/net v0.0.0-20210525063256-abc453219eb5 // indirect
-	golang.org/x/sys v0.0.0-20210531225629-47163c9f4e4f // indirect
+	golang.org/x/sys v0.0.0-20210603125802-9665404d3644 // indirect
 	golang.org/x/time v0.0.0-20210220033141-f8bda1e9f3ba // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 )

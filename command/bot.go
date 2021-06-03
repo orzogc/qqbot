@@ -14,6 +14,7 @@ import (
 	"github.com/orzogc/qqbot/command/moment"
 	"github.com/orzogc/qqbot/command/search"
 	"github.com/orzogc/qqbot/command/setu"
+	"github.com/orzogc/qqbot/command/zuan"
 	"github.com/orzogc/qqbot/qqbot_utils"
 	"github.com/spf13/viper"
 )
@@ -35,6 +36,7 @@ type Config struct {
 	Setu   setu.Config   `json:"setu"`   // 图片机器人配置
 	Search search.Config `json:"search"` // 搜索机器人配置
 	Moment moment.Config `json:"moment"` // 动态机器人配置
+	Zuan   zuan.Config   `json:"zuan"`   // 祖安机器人配置
 	Reply  Reply         `json:"reply"`  // 回复配置
 }
 
@@ -91,6 +93,7 @@ func (b *CommandBot) Init() {
 		setu.NewSetuBot(&instance.config.Setu),
 		search.NewSearchBot(&instance.config.Search),
 		moment.NewMomentBot(&instance.config.Moment),
+		zuan.NewZuanBot(&instance.config.Zuan),
 	}
 	for _, bot := range instance.bots {
 		instance.commands = bot.SetConfig(instance.commands)

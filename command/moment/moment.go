@@ -99,7 +99,7 @@ func (b *MomentBot) HandlePrivateMessage(qqClient *client.QQClient, msg *message
 		return
 	}
 
-	moments, err := getMoment(momentCmd, keyword)
+	moments, err := getMoment(momentCmd)
 	if err != nil {
 		logger.WithError(err).WithField("privateMessage", msg.ToString()).Error("获取动态失败")
 		qqbot_utils.SendPrivateText(qqClient, msg, b.config.Reply.GetMomentFailed)
@@ -126,7 +126,7 @@ func (b *MomentBot) HandleGroupMessage(qqClient *client.QQClient, msg *message.G
 		return
 	}
 
-	moments, err := getMoment(momentCmd, keyword)
+	moments, err := getMoment(momentCmd)
 	if err != nil {
 		logger.WithError(err).WithField("groupMessage", msg.ToString()).Error("获取动态失败")
 		qqbot_utils.ReplyGroupText(qqClient, msg, b.config.Reply.GetMomentFailed)
@@ -199,7 +199,7 @@ func (b *MomentBot) sendGroupMessage(qqClient *client.QQClient, msg *message.Gro
 }
 
 // 获取动态
-func getMoment(cmd map[Moment]struct{}, keyword string) (moments []moment_utils.Moment, err error) {
+func getMoment(cmd map[Moment]struct{}) (moments []moment_utils.Moment, err error) {
 	logger := logger.WithField("from", "getMoment")
 
 	var e error

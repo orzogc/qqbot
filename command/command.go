@@ -6,12 +6,14 @@ import (
 	"github.com/orzogc/qqbot/command/moment"
 	"github.com/orzogc/qqbot/command/search"
 	"github.com/orzogc/qqbot/command/setu"
+	"github.com/orzogc/qqbot/command/zuan"
 )
 
 var (
 	_ Command = (*setu.SetuBot)(nil)
 	_ Command = (*search.SearchBot)(nil)
 	_ Command = (*moment.MomentBot)(nil)
+	_ Command = (*zuan.ZuanBot)(nil)
 )
 
 // Command接口

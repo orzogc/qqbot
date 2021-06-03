@@ -31,7 +31,7 @@ var (
 
 // 图片接口
 type Setu interface {
-	// 获取图片，keyword为搜索关键字，可以不支持搜索，可返回多个图片
+	// 获取图片，keyword为搜索关键字，可以不支持搜索，可返回文字描述和多个图片
 	GetImage(keyword string) (*setu_utils.Image, error)
 }
 
