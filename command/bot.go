@@ -93,7 +93,6 @@ func (b *CommandBot) Init() {
 		setu.NewSetuBot(&instance.config.Setu),
 		search.NewSearchBot(&instance.config.Search),
 		moment.NewMomentBot(&instance.config.Moment),
-		zuan.NewZuanBot(&instance.config.Zuan),
 	}
 	for _, bot := range instance.bots {
 		instance.commands = bot.SetConfig(instance.commands)
