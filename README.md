@@ -4,7 +4,7 @@
 QQ聊天机器人
 
 ### 配置
-先运行`qqbot -g`生成`device.json`，配置好json后运行`qqbot`
+先运行`qqbot -g`生成`device.json`，`device.json`不用修改，配置好`qqbot.json`和`command.json`后运行`qqbot`
 
 #### 配置qqbot.json
 `qqbot.json`内容：
@@ -38,4 +38,4 @@ QQ聊天机器人
 }
 ```
 
-更多配置请看源码
+更多配置内容请看源码
