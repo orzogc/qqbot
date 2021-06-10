@@ -49,7 +49,7 @@ type Reply struct {
 
 // pixiv配置
 type PixivConfig struct {
-	PHPSESSID    string             `json:"phpsessid"`    // pixiv网页Cookie里的PHPSESSID，为空的话没有r18图片
+	PHPSESSID    string             `json:"phpsessid"`    // pixiv网页Cookie里的PHPSESSID值，为空的话没有r18图片
 	SearchOption pixiv.SearchOption `json:"searchOption"` // 搜索选项
 }
 

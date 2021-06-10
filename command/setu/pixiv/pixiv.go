@@ -41,7 +41,7 @@ type Pixiv struct {
 	SearchOption *SearchOption
 }
 
-// 设置pixiv，PHPSESSID为pixiv帐号Cookie的PHPSESSID，PHPSESSID为空时不登陆任何帐号
+// 设置pixiv，PHPSESSID为pixiv帐号Cookie的PHPSESSID值，为空时不登陆任何帐号
 func config(PHPSESSID string) context.Context {
 	c := &client.Client{}
 	c.SetDefaultHeader("User-Agent", client.DefaultUserAgent)
