@@ -6,8 +6,8 @@ import (
 )
 
 const (
-	CosplayURL = "https://islandwind233.pro/ZY/API/Cos/GetCos.php" // cosplay图片接口
-	CosplayID  = "islandwind233_cosplay"                           // cosplay图片ID
+	CosplayURL = "https://iw233.cn/API/cos.php" // cosplay图片接口
+	CosplayID  = "islandwind233_cosplay"        // cosplay图片ID
 )
 
 // cosplay图片

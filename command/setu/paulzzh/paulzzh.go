@@ -131,7 +131,7 @@ func (p *Paulzzh) Request() (*Response, error) {
 }
 
 // 获取图片
-func (p *Paulzzh) GetTouhouImage() ([]byte, error) {
+func (p *Paulzzh) GetTouhouImage() (*setu_utils.Image, error) {
 	query, err := p.query()
 	if err != nil {
 		return nil, err
@@ -143,21 +143,32 @@ func (p *Paulzzh) GetTouhouImage() ([]byte, error) {
 			return nil, err
 		}
 		if !json.Valid(body) {
-			return body, nil
+			return &setu_utils.Image{
+				Images: [][]byte{body},
+			}, nil
 		}
 		resp := new(Response)
 		err = json.Unmarshal(body, resp)
 		if err != nil {
 			return nil, err
 		}
-		return resp.GetImage()
+		image, err := resp.GetImage()
+		if err != nil {
+			return nil, err
+		}
+		return &setu_utils.Image{
+			Text:   resp.Source,
+			Images: [][]byte{image},
+		}, nil
 	}
 
 	body, err := qqbot_utils.Get(PaulzzhURL, query)
 	if err != nil {
 		return nil, err
 	}
-	return body, nil
+	return &setu_utils.Image{
+		Images: [][]byte{body},
+	}, nil
 }
 
 // 获取图片，实现Setu接口
@@ -169,5 +180,5 @@ func (p *Paulzzh) GetImage(keyword string) (*setu_utils.Image, error) {
 		return nil, err
 	}
 
-	return &setu_utils.Image{Images: [][]byte{img}}, nil
+	return img, nil
 }

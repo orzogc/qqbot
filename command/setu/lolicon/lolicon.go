@@ -23,6 +23,7 @@ const (
 	num        = "num"
 	proxy      = "proxy"
 	size1200   = "size1200"
+	page_url   = "https://www.pixiv.net/artworks/%d"
 )
 
 // lolicon的请求query
@@ -133,7 +134,7 @@ func (l *Lolicon) GetImage(keyword string) (*setu_utils.Image, error) {
 		return nil, err
 	}
 
-	return &setu_utils.Image{Images: img}, nil
+	return img, nil
 }
 
 // 检查响应是否成功
@@ -162,7 +163,7 @@ func (r *Response) Error() error {
 }
 
 // 获取图片
-func (r *Response) GetImage() ([][]byte, error) {
+func (r *Response) GetImage() (*setu_utils.Image, error) {
 	if !r.IsSuccess() {
 		return nil, fmt.Errorf("请求lolicon出现错误：%w，错误信息msg：%s", r.Error(), r.Msg)
 	}
@@ -171,9 +172,11 @@ func (r *Response) GetImage() ([][]byte, error) {
 	}
 
 	images := make([][]byte, 0, len(r.Data))
+	var pid int
 	var mu sync.Mutex
 	var wg sync.WaitGroup
 	for _, img := range r.Data {
+		pid = img.PID
 		wg.Add(1)
 		go func(img Image) {
 			defer wg.Done()
@@ -204,5 +207,8 @@ func (r *Response) GetImage() ([][]byte, error) {
 		return nil, fmt.Errorf("获取lolicon图片失败")
 	}
 
-	return images, nil
+	return &setu_utils.Image{
+		Text:   fmt.Sprintf(page_url, pid),
+		Images: images,
+	}, nil
 }

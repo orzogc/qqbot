@@ -6,8 +6,8 @@ import (
 )
 
 const (
-	AnimeURL = "https://islandwind233.pro/ZY/API/GetImgApi.php" // 二次元图片接口
-	AnimeID  = "islandwind233_anime"                            // 二次元图片ID
+	AnimeURL = "https://iw233.cn/API/ghs.php" // 二次元图片接口
+	AnimeID  = "islandwind233_anime"          // 二次元图片ID
 )
 
 // 二次元图片
